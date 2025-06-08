@@ -15,19 +15,37 @@ export const createPaymentIntent = async (req, res, next) => {
       });
     }
 
-    const { amount, currency = "usd", domainId, metadata = {} } = req.body;
+    const { amount, currency = "usd", domain, metadata = {} } = req.body;
 
-    // Verify domain belongs to user
-    const domain = await Domain.findOne({
-      _id: domainId,
+    // Find or create domain record
+    let domainRecord = await Domain.findOne({
+      fullDomain: domain,
       owner: req.user.id,
     });
 
-    if (!domain) {
-      return res.status(404).json({
-        success: false,
-        message: "Domain not found",
+    if (!domainRecord) {
+      // Parse domain name and extension
+      const domainParts = domain.split(".");
+      const domainName = domainParts[0];
+      const extension = domainParts.slice(1).join(".");
+
+      // Create a new domain record if it doesn't exist
+      domainRecord = new Domain({
+        name: domainName,
+        extension: extension,
+        fullDomain: domain,
+        owner: req.user.id,
+        status: "pending",
+        isAvailable: true,
+        registrar: "namecheap",
+        pricing: {
+          cost: amount / 100, // Convert from cents to dollars
+          markup: 0,
+          sellingPrice: amount / 100,
+          currency: currency.toUpperCase(),
+        },
       });
+      await domainRecord.save();
     }
 
     // Get or create Stripe customer
@@ -51,22 +69,40 @@ export const createPaymentIntent = async (req, res, next) => {
       currency,
       customerId,
       {
-        domainId: domain._id.toString(),
+        domainId: domainRecord._id.toString(),
         userId: req.user._id.toString(),
-        domainName: domain.fullDomain,
+        domainName: domainRecord.fullDomain,
         ...metadata,
       }
     );
 
-    // Update transaction with payment intent ID
-    await Transaction.findOneAndUpdate(
-      { domain: domainId, user: req.user.id, status: "pending" },
-      {
-        "paymentDetails.stripePaymentIntentId": paymentIntent.id,
+    // Create or update transaction record
+    let transaction = await Transaction.findOne({
+      domain: domainRecord._id,
+      user: req.user.id,
+      status: "pending",
+    });
+
+    if (!transaction) {
+      transaction = new Transaction({
+        user: req.user.id,
+        domain: domainRecord._id,
+        type: "purchase",
+        amount: {
+          value: amount / 100, // Convert from cents to dollars
+          currency: currency.toUpperCase(),
+        },
         status: "pending",
-      },
-      { new: true }
-    );
+        paymentMethod: "stripe",
+        paymentDetails: {
+          stripePaymentIntentId: paymentIntent.id,
+        },
+      });
+      await transaction.save();
+    } else {
+      transaction.paymentDetails.stripePaymentIntentId = paymentIntent.id;
+      await transaction.save();
+    }
 
     res.status(200).json({
       success: true,

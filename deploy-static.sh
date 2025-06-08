@@ -21,7 +21,7 @@ mkdir -p logs
 # Start backend server
 echo -e "${YELLOW}🖥️ Starting backend server...${NC}"
 cd server
-npm start > ../logs/server.log 2>&1 &
+npm run dev > ../logs/server.log 2>&1 &
 SERVER_PID=$!
 cd ..
 

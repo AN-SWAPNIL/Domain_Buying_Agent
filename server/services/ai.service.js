@@ -1,4 +1,20 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
+import { PromptTemplate } from "@langchain/core/prompts";
+import { ChatGoogleGenerativeAI } from "@langchain/google-genai";
+import { StructuredOutputParser } from "@langchain/core/output_parsers";
+import { z } from "zod";
+import dotenv from "dotenv";
+
+dotenv.config();
+
+// Custom error classes
+class AIServiceError extends Error {
+  constructor(message, code) {
+    super(message);
+    this.name = "AIServiceError";
+    this.code = code;
+  }
+}
 
 class AIService {
   constructor() {
@@ -8,206 +24,194 @@ class AIService {
       console.log("API Key present:", !!process.env.GOOGLE_API_KEY);
       console.log("API Key length:", process.env.GOOGLE_API_KEY?.length || 0);
 
-      // Temporary hardcoded key for testing
-      const apiKey =
-        process.env.GOOGLE_API_KEY || "AIzaSyDTIx0PLphILmcqVpc5ooEW6Fo0Ogl596I";
-
-      if (!apiKey || apiKey === "demo-key") {
-        throw new Error("Google API Key not configured");
+      const apiKey = process.env.GOOGLE_API_KEY;
+      if (!apiKey) {
+        throw new AIServiceError(
+          "Google API Key not configured",
+          "CONFIG_ERROR"
+        );
       }
 
-      this.genAI = new GoogleGenerativeAI(apiKey);
-      this.model = this.genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+      // Initialize LangChain chat model
+      this.chatModel = new ChatGoogleGenerativeAI({
+        modelName: "gemini-1.5-flash",
+        maxOutputTokens: 1024,
+        temperature: 0.7,
+        googleApiKey: apiKey,
+      });
+
+      // Initialize output parser for structured responses
+      this.outputParser = StructuredOutputParser.fromZodSchema(
+        z.array(
+          z.object({
+            name: z.string(),
+            domain: z.string(),
+            extension: z.string(),
+            reasoning: z.string(),
+          })
+        )
+      );
+
+      // Initialize prompts
+      this.initializePrompts();
+
+      // Initialize conversation history
+      this.conversationHistory = new Map();
+
       console.log("✅ AI Service initialized successfully");
     } catch (error) {
-      console.warn("⚠️ AI Service initialization failed:", error.message);
-      this.model = null;
+      console.error("⚠️ AI Service initialization failed:", error.message);
+      throw error;
     }
   }
 
-  initializePrompts() {
-    // Domain suggestion prompt
-    this.domainSuggestionPrompt = PromptTemplate.fromTemplate(`
-      You are an expert domain name consultant. Based on the user's requirements, suggest relevant domain names.
-      
-      User Requirements:
-      - Business/Project: {business}
-      - Industry: {industry}
-      - Keywords: {keywords}
-      - Budget: {budget}
-      - Preferred Extensions: {extensions}
-      - Target Audience: {audience}
-      
-      Additional Context: {context}
-      
-      Please suggest 10 creative, memorable, and brandable domain names that:
-      1. Are relevant to the business/industry
-      2. Are easy to remember and spell
-      3. Are SEO-friendly
-      4. Sound professional
-      5. Are likely to be available
-      
-      For each suggestion, provide:
-      - Domain name
-      - Why it's a good fit (1-2 sentences)
-      - Estimated brandability score (1-10)
-      - Target extension preference
-      
-      Format your response as a JSON array of objects with keys: domain, reasoning, brandabilityScore, extension.
-    `);
+  async initializePrompts() {
+    try {
+      // Domain suggestion prompt
+      this.domainSuggestionPrompt = new PromptTemplate({
+        template: `You are an expert domain name consultant. Based on the user's requirements, suggest relevant domain names.
+        
+        User Requirements:
+        - Business/Project: {business}
+        - Industry: {industry}
+        - Keywords: {keywords}
+        - Budget: {budget}
+        - Preferred Extensions: {extensions}
+        - Target Audience: {audience}
+        
+        Additional Context: {context}
+        
+        Please suggest 10 creative, memorable, and brandable domain names that:
+        1. Are relevant to the business/industry
+        2. Are easy to remember and spell
+        3. Are SEO-friendly
+        4. Sound professional
+        5. Are likely to be available
+        
+        For each suggestion, provide:
+        - Domain name
+        - Why it's a good fit (1-2 sentences)
+        - Estimated brandability score (1-10)
+        - Target extension preference
+        
+        Format your response as a JSON array of objects with keys: domain, reasoning, brandabilityScore, extension.`,
+        inputVariables: [
+          "business",
+          "industry",
+          "keywords",
+          "budget",
+          "extensions",
+          "audience",
+          "context",
+        ],
+      });
 
-    // Domain analysis prompt
-    this.domainAnalysisPrompt = PromptTemplate.fromTemplate(`
-      Analyze the following domain name and provide detailed insights:
-      
-      Domain: {domain}
-      User Context: {context}
-      
-      Please analyze:
-      1. Brandability (1-10)
-      2. Memorability (1-10)
-      3. SEO potential (1-10)
-      4. Industry relevance (1-10)
-      5. Overall recommendation (1-10)
-      
-      Provide insights on:
-      - Strengths of this domain
-      - Potential weaknesses
-      - Target market suitability
-      - Alternative suggestions if score is low
-      
-      Format as JSON with scores and detailed analysis.
-    `);
+      // Domain analysis prompt
+      this.domainAnalysisPrompt = new PromptTemplate({
+        template: `Analyze the following domain name and provide detailed insights:
+        
+        Domain: {domain}
+        User Context: {context}
+        
+        Please analyze:
+        1. Brandability (1-10)
+        2. Memorability (1-10)
+        3. SEO potential (1-10)
+        4. Industry relevance (1-10)
+        5. Overall recommendation (1-10)
+        
+        Provide insights on:
+        - Strengths of this domain
+        - Potential weaknesses
+        - Target market suitability
+        - Alternative suggestions if score is low
+        
+        Format as JSON with scores and detailed analysis.`,
+        inputVariables: ["domain", "context"],
+      });
 
-    // Business consultation prompt
-    this.consultationPrompt = PromptTemplate.fromTemplate(`
-      You are a domain expert consultant. The user is asking: {question}
-      
-      User Context:
-      - Previous conversation: {conversation}
-      - User preferences: {preferences}
-      - Current domains of interest: {domains}
-      
-      Provide helpful, expert advice about domain names, web presence, branding, or related topics.
-      Be conversational, helpful, and provide actionable insights.
-      
-      If the user is asking about pricing, availability, or technical aspects, provide general guidance
-      but recommend they check current data through our system.
-    `);
+      // Business consultation prompt
+      this.consultationPrompt = new PromptTemplate({
+        template: `You are a domain expert consultant. The user is asking: {question}
+        
+        User Context:
+        - Previous conversation: {conversation}
+        - User preferences: {preferences}
+        - Current domains of interest: {domains}
+        
+        Provide helpful, expert advice about domain names, web presence, branding, or related topics.
+        Be conversational, helpful, and provide actionable insights.
+        
+        If the user is asking about pricing, availability, or technical aspects, provide general guidance
+        but recommend they check current data through our system.`,
+        inputVariables: ["question", "conversation", "preferences", "domains"],
+      });
+    } catch (error) {
+      throw new AIServiceError(
+        "Failed to initialize prompts: " + error.message,
+        "INIT_ERROR"
+      );
+    }
   }
 
   async suggestDomains(requirements) {
     try {
-      if (!this.model) {
-        throw new Error("AI Service not available");
+      if (!this.domainSuggestionPrompt) {
+        await this.initializePrompts();
       }
 
-      const prompt = `You are an expert domain name consultant. Based on the user's requirements, suggest relevant domain names.
+      const formattedPrompt = await this.domainSuggestionPrompt.format({
+        business: requirements.business || "General Business",
+        industry: requirements.industry || "Technology",
+        keywords: requirements.keywords?.join(", ") || "",
+        budget: requirements.budget || "$50-100",
+        extensions: requirements.extensions?.join(", ") || ".com, .net, .org",
+        audience: requirements.audience || "General Public",
+        context: requirements.context || "",
+      });
 
-User Requirements:
-- Business/Project: ${requirements.business || "General Business"}
-- Industry: ${requirements.industry || "Technology"}
-- Keywords: ${requirements.keywords?.join(", ") || ""}
-- Budget: ${requirements.budget || "$50-100"}
-- Preferred Extensions: ${
-        requirements.extensions?.join(", ") || ".com, .net, .org"
-      }
-- Target Audience: ${requirements.audience || "General Public"}
+      const result = await this.chatModel.predict(formattedPrompt);
 
-Additional Context: ${requirements.context || ""}
-
-Please suggest 10 creative, memorable, and brandable domain names that:
-1. Are relevant to the business/industry
-2. Are easy to remember and spell
-3. Are SEO-friendly
-4. Are within budget range
-5. Use preferred extensions
-
-Return the response as a JSON object with this structure:
-{
-  "suggestions": [
-    {
-      "domain": "example.com",
-      "reasoning": "Why this domain is good",
-      "score": 8.5,
-      "category": "brandable"
-    }
-  ],
-  "analysis": "Brief analysis of the suggestions"
-}`;
-
-      const result = await this.model.generateContent(prompt);
-      const response = result.response.text();
-
-      // Try to parse JSON response
       try {
-        const suggestions = JSON.parse(
-          response.replace(/```json\n?/g, "").replace(/```\n?/g, "")
+        return JSON.parse(
+          result.replace(/```json\n?/g, "").replace(/```\n?/g, "")
         );
-        return suggestions;
       } catch (parseError) {
-        // Fallback: extract domains from text response
-        return this.extractDomainsFromText(response);
+        console.warn(
+          "Failed to parse JSON response, extracting domains from text"
+        );
+        return this.extractDomainsFromText(result);
       }
     } catch (error) {
       console.error("AI Domain Suggestion Error:", error);
-      throw new Error("Failed to generate domain suggestions");
+      throw new AIServiceError(
+        "Failed to generate domain suggestions: " + error.message,
+        "SUGGESTION_ERROR"
+      );
     }
   }
 
   async analyzeDomain(domain, context = "") {
     try {
-      if (!this.model) {
-        throw new Error("AI Service not available");
+      if (!this.domainAnalysisPrompt) {
+        await this.initializePrompts();
       }
 
-      const prompt = `Analyze the following domain name and provide detailed insights:
+      const formattedPrompt = await this.domainAnalysisPrompt.format({
+        domain,
+        context,
+      });
 
-Domain: ${domain}
-User Context: ${context}
-
-Please analyze:
-1. Brandability (1-10)
-2. Memorability (1-10)
-3. SEO potential (1-10)
-4. Industry relevance (1-10)
-5. Overall recommendation (1-10)
-
-Provide insights on:
-- Strengths of this domain
-- Potential weaknesses
-- Target market suitability
-- Alternative suggestions if score is low
-
-Format as JSON with this structure:
-{
-  "domain": "${domain}",
-  "scores": {
-    "brandability": 8,
-    "memorability": 7,
-    "seo": 8,
-    "relevance": 9,
-    "overall": 8
-  },
-  "analysis": {
-    "strengths": ["strength1", "strength2"],
-    "weaknesses": ["weakness1", "weakness2"],
-    "targetMarket": "description",
-    "alternatives": ["alt1.com", "alt2.com"]
-  }
-}`;
-
-      const result = await this.model.generateContent(prompt);
-      const response = result.response.text();
+      const result = await this.chatModel.predict(formattedPrompt);
 
       try {
         return JSON.parse(
-          response.replace(/```json\n?/g, "").replace(/```\n?/g, "")
+          result.replace(/```json\n?/g, "").replace(/```\n?/g, "")
         );
       } catch (parseError) {
         return {
           domain,
-          analysis: response,
+          analysis: result,
           scores: {
             brandability: 7,
             memorability: 7,
@@ -219,49 +223,56 @@ Format as JSON with this structure:
       }
     } catch (error) {
       console.error("AI Domain Analysis Error:", error);
-      throw new Error("Failed to analyze domain");
+      throw new AIServiceError(
+        "Failed to analyze domain: " + error.message,
+        "ANALYSIS_ERROR"
+      );
     }
   }
 
   async consultUser(question, context = {}) {
     try {
-      if (!this.model) {
-        throw new Error("AI Service not available");
+      if (!this.consultationPrompt) {
+        await this.initializePrompts();
       }
 
-      const prompt = `You are a domain expert consultant. The user is asking: ${question}
+      // Get conversation history for the user
+      const conversationHistory = this.getConversationHistory(context.userId);
 
-User Context:
-- Previous conversation: ${context.conversation || "First interaction"}
-- User preferences: ${JSON.stringify(context.preferences || {})}
-- Current domains of interest: ${
-        context.domains?.join(", ") || "None specified"
-      }
+      const formattedPrompt = await this.consultationPrompt.format({
+        question,
+        conversation: conversationHistory || "First interaction",
+        preferences: JSON.stringify(context.preferences || {}),
+        domains: context.domains?.join(", ") || "None specified",
+      });
 
-Provide helpful, expert advice about domain names, web presence, branding, or related topics.
-Be conversational, helpful, and provide actionable insights.
+      const result = await this.chatModel.predict(formattedPrompt);
 
-If the user is asking about pricing, availability, or technical aspects, provide general guidance
-but recommend they check current data through our system.`;
-
-      const result = await this.model.generateContent(prompt);
-      const response = result.response.text();
+      // Update conversation history
+      this.updateConversationHistory(context.userId, question, result);
 
       return {
-        response,
-        suggestions: this.extractActionableItems(response),
-        timestamp: new Date(),
+        message: result,
+        suggestions: this.extractActionableItems(result),
+        domains: this.extractDomainsFromText(result),
       };
     } catch (error) {
       console.error("AI Consultation Error:", error);
-      throw new Error("Failed to provide consultation");
+      throw new AIServiceError(
+        "Failed to process consultation request: " + error.message,
+        "CONSULTATION_ERROR"
+      );
     }
   }
 
   async generateBusinessName(industry, keywords, style = "modern") {
     try {
-      const prompt = PromptTemplate.fromTemplate(`
-        Generate creative business names for a {industry} business.
+      if (!this.chatModel) {
+        throw new AIServiceError("AI Service not available", "SERVICE_ERROR");
+      }
+
+      const prompt = new PromptTemplate({
+        template: `Generate creative business names for a {industry} business.
         Keywords to incorporate: {keywords}
         Style preference: {style}
         
@@ -273,30 +284,47 @@ but recommend they check current data through our system.`;
         
         For each name, suggest the best domain extension and explain why it works.
         
-        Format as JSON array with: name, domain, extension, reasoning.
-      `);
+        Format as JSON array with: name, domain, extension, reasoning.`,
+        inputVariables: ["industry", "keywords", "style"],
+      });
 
-      const chain = RunnableSequence.from([
-        prompt,
-        this.model,
-        this.outputParser,
-      ]);
-
-      const response = await chain.invoke({
+      const formattedPrompt = await prompt.format({
         industry,
         keywords: keywords.join(", "),
         style,
       });
 
+      const result = await this.chatModel.predict(formattedPrompt);
+
       try {
-        return JSON.parse(response);
+        const parsed = await this.outputParser.parse(result);
+        return parsed;
       } catch (parseError) {
-        return this.extractBusinessNamesFromText(response);
+        console.warn("Failed to parse structured output, extracting from text");
+        return this.extractBusinessNamesFromText(result);
       }
     } catch (error) {
       console.error("AI Business Name Generation Error:", error);
-      throw new Error("Failed to generate business names");
+      throw new AIServiceError(
+        "Failed to generate business names: " + error.message,
+        "GENERATION_ERROR"
+      );
     }
+  }
+
+  // Conversation history management
+  getConversationHistory(userId) {
+    return this.conversationHistory.get(userId) || [];
+  }
+
+  updateConversationHistory(userId, question, answer) {
+    const history = this.getConversationHistory(userId);
+    history.push({ question, answer, timestamp: new Date() });
+    this.conversationHistory.set(userId, history);
+  }
+
+  clearConversationHistory(userId) {
+    this.conversationHistory.delete(userId);
   }
 
   // Helper methods

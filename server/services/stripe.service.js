@@ -1,12 +1,29 @@
 import Stripe from "stripe";
+import dotenv from "dotenv";
+dotenv.config();
 
 class StripeService {
   constructor() {
-    this.stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+    const stripeKey = process.env.STRIPE_SECRET_KEY;
+    if (!stripeKey) {
+      console.warn(
+        "⚠️ STRIPE_SECRET_KEY not configured. Payment functionality will be limited."
+      );
+      this.stripe = null;
+    } else {
+      this.stripe = new Stripe(stripeKey);
+      console.log("✅ Stripe service initialized successfully");
+    }
   }
 
   async createCustomer(userData) {
     try {
+      if (!this.stripe) {
+        throw new Error(
+          "Stripe not configured. Please set STRIPE_SECRET_KEY environment variable."
+        );
+      }
+
       const customer = await this.stripe.customers.create({
         email: userData.email,
         name: userData.name,
@@ -29,6 +46,12 @@ class StripeService {
     metadata = {}
   ) {
     try {
+      if (!this.stripe) {
+        throw new Error(
+          "Stripe not configured. Please set STRIPE_SECRET_KEY environment variable."
+        );
+      }
+
       const paymentIntent = await this.stripe.paymentIntents.create({
         amount: Math.round(amount * 100), // Convert to cents
         currency,

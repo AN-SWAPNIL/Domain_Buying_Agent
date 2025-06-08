@@ -109,36 +109,36 @@ ngrok-skip-browser-warning: 1
 
 ### === LOCAL TESTING (PORT 5000) ===
 
-### Health Check (Local)
-GET {{localUrl}}/../health
+# ### Health Check (Local)
+# GET {{localUrl}}/../health
 
-### Login (Local)
-POST {{localUrl}}/auth/login
-Content-Type: application/json
+# ### Login (Local)
+# POST {{localUrl}}/auth/login
+# Content-Type: application/json
 
-{
-  "email": "test@example.com",
-  "password": "Password123!"
-}
+# {
+#   "email": "test@example.com",
+#   "password": "Password123!"
+# }
 
-### Domain Search (Local)
-POST {{localUrl}}/domains/search
-Content-Type: application/json
-Authorization: Bearer {{authToken}}
+# ### Domain Search (Local)
+# POST {{localUrl}}/domains/search
+# Content-Type: application/json
+# Authorization: Bearer {{authToken}}
 
-{
-  "domain": "test-domain.com"
-}
+# {
+#   "domain": "test-domain.com"
+# }
 
-### AI Chat (Local)
-POST {{localUrl}}/ai/chat
-Content-Type: application/json
-Authorization: Bearer {{authToken}}
+# ### AI Chat (Local)
+# POST {{localUrl}}/ai/chat
+# Content-Type: application/json
+# Authorization: Bearer {{authToken}}
 
-{
-  "message": "What's a good domain name for an e-commerce site?",
-  "conversationId": null
-}
+# {
+#   "message": "What's a good domain name for an e-commerce site?",
+#   "conversationId": null
+# }
 
 ### === CURL EQUIVALENTS ===
 

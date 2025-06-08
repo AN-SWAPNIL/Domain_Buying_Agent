@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import mongoosePaginate from "mongoose-paginate-v2";
 
 const domainSchema = new mongoose.Schema(
   {
@@ -106,5 +107,8 @@ domainSchema.pre("save", function (next) {
   }
   next();
 });
+
+// Add pagination plugin
+domainSchema.plugin(mongoosePaginate);
 
 export default mongoose.model("Domain", domainSchema);

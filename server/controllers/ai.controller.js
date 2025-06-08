@@ -3,6 +3,31 @@ import { v4 as uuidv4 } from "uuid";
 import AIConversation from "../models/AIConversation.model.js";
 import aiService from "../services/ai.service.js";
 
+// Clean up old conversations (runs every 24 hours)
+const cleanupOldConversations = async () => {
+  const thirtyDaysAgo = new Date();
+  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+  try {
+    await AIConversation.updateMany(
+      {
+        status: "active",
+        updatedAt: { $lt: thirtyDaysAgo },
+      },
+      {
+        $set: { status: "abandoned" },
+      }
+    );
+  } catch (error) {
+    console.error("Failed to cleanup old conversations:", error);
+  }
+};
+
+// Run cleanup on startup
+cleanupOldConversations();
+// Schedule cleanup to run daily
+setInterval(cleanupOldConversations, 24 * 60 * 60 * 1000);
+
 // Suggest domains using AI
 export const suggestDomains = async (req, res, next) => {
   try {
@@ -103,6 +128,9 @@ export const chatWithAI = async (req, res, next) => {
         sessionId: currentSessionId,
         messages: [],
         status: "active",
+        context: {
+          userPreferences: req.user.preferences || {},
+        },
       });
     }
 
@@ -119,8 +147,8 @@ export const chatWithAI = async (req, res, next) => {
         .slice(-10)
         .map((m) => `${m.role}: ${m.content}`)
         .join("\n"),
-      preferences: req.user.preferences,
-      domains: [], // Could be populated with user's domains
+      preferences: conversation.context.userPreferences,
+      domains: conversation.recommendations.map((r) => r.domain),
     };
 
     const aiResponse = await aiService.consultUser(message, context);
@@ -128,7 +156,7 @@ export const chatWithAI = async (req, res, next) => {
     // Add AI response
     conversation.messages.push({
       role: "assistant",
-      content: aiResponse.response,
+      content: aiResponse.message,
       timestamp: new Date(),
       metadata: {
         model: "gemini-pro",
@@ -148,13 +176,17 @@ export const chatWithAI = async (req, res, next) => {
       );
     }
 
+    // Update conversation status
+    conversation.status = "active";
+    conversation.updatedAt = new Date();
+
     await conversation.save();
 
     res.status(200).json({
       success: true,
       data: {
         sessionId: currentSessionId,
-        message: aiResponse.response,
+        message: aiResponse.message,
         suggestions: aiResponse.suggestions,
         conversation: {
           id: conversation._id,
@@ -251,7 +283,7 @@ export const generateBusinessName = async (req, res, next) => {
 
     const { industry, keywords, style = "modern" } = req.body;
 
-    const businessNames = await aiService.generateBusinessName(
+    const names = await aiService.generateBusinessName(
       industry,
       keywords,
       style
@@ -260,12 +292,7 @@ export const generateBusinessName = async (req, res, next) => {
     res.status(200).json({
       success: true,
       data: {
-        businessNames,
-        criteria: {
-          industry,
-          keywords,
-          style,
-        },
+        names,
         generatedAt: new Date(),
       },
     });

@@ -21,7 +21,7 @@ const paymentIntentValidation = [
     .optional()
     .isLength({ min: 3, max: 3 })
     .withMessage("Currency must be 3 characters"),
-  body("domainId").isMongoId().withMessage("Valid domain ID is required"),
+  body("domain").isString().notEmpty().withMessage("Domain name is required"),
   body("metadata")
     .optional()
     .isObject()
@@ -37,11 +37,7 @@ router.post(
 
 // Protected routes
 router.use(protect);
-router.post(
-  "/create-payment-intent",
-  paymentIntentValidation,
-  createPaymentIntent
-);
+router.post("/create-intent", paymentIntentValidation, createPaymentIntent);
 router.post("/confirm-payment/:paymentIntentId", confirmPayment);
 router.get("/history", getPaymentHistory);
 router.post("/refund/:transactionId", createRefund);

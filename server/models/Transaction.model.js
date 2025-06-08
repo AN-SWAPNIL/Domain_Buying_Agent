@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import mongoosePaginate from "mongoose-paginate-v2";
 
 const transactionSchema = new mongoose.Schema(
   {
@@ -67,5 +68,8 @@ transactionSchema.index({ user: 1, createdAt: -1 });
 transactionSchema.index({ domain: 1 });
 transactionSchema.index({ status: 1 });
 transactionSchema.index({ type: 1 });
+
+// Add pagination plugin
+transactionSchema.plugin(mongoosePaginate);
 
 export default mongoose.model("Transaction", transactionSchema);

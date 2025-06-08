@@ -6,6 +6,8 @@ import {
   logout,
   getMe,
   updateProfile,
+  forgotPassword,
+  resetPassword,
 } from "../controllers/auth.controller.js";
 import { protect } from "../middleware/auth.js";
 
@@ -34,11 +36,27 @@ const loginValidation = [
   body("password").notEmpty().withMessage("Password is required"),
 ];
 
+const forgotPasswordValidation = [
+  body("email")
+    .isEmail()
+    .normalizeEmail()
+    .withMessage("Please provide a valid email"),
+];
+
+const resetPasswordValidation = [
+  body("token").notEmpty().withMessage("Reset token is required"),
+  body("password")
+    .isLength({ min: 6 })
+    .withMessage("Password must be at least 6 characters long"),
+];
+
 // Routes
 router.post("/register", registerValidation, register);
 router.post("/login", loginValidation, login);
 router.post("/logout", logout);
 router.get("/me", protect, getMe);
 router.put("/profile", protect, updateProfile);
+router.post("/forgot-password", forgotPasswordValidation, forgotPassword);
+router.post("/reset-password", resetPasswordValidation, resetPassword);
 
 export default router;

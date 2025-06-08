@@ -1,6 +1,7 @@
 import { validationResult } from "express-validator";
 import User from "../models/User.model.js";
 import stripeService from "../services/stripe.service.js";
+import crypto from "crypto";
 
 // Register user
 export const register = async (req, res, next) => {
@@ -187,6 +188,86 @@ export const updateProfile = async (req, res, next) => {
           preferences: user.preferences,
           updatedAt: user.updatedAt,
         },
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Forgot password
+export const forgotPassword = async (req, res, next) => {
+  try {
+    const { email } = req.body;
+
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "No user found with that email",
+      });
+    }
+
+    // Get reset token
+    const resetToken = user.getResetPasswordToken();
+
+    await user.save({ validateBeforeSave: false });
+
+    // For now, just return the token (in production, send via email)
+    // TODO: Implement email service to send reset link
+    res.status(200).json({
+      success: true,
+      message: "Password reset token generated",
+      resetToken, // Remove this in production
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Reset password
+export const resetPassword = async (req, res, next) => {
+  try {
+    const { token, password } = req.body;
+
+    // Get hashed token
+    const resetPasswordToken = crypto
+      .createHash("sha256")
+      .update(token)
+      .digest("hex");
+
+    const user = await User.findOne({
+      resetPasswordToken,
+      resetPasswordExpire: { $gt: Date.now() },
+    });
+
+    if (!user) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid or expired password reset token",
+      });
+    }
+
+    // Set new password
+    user.password = password;
+    user.resetPasswordToken = undefined;
+    user.resetPasswordExpire = undefined;
+    await user.save();
+
+    // Generate new token
+    const jwtToken = user.getSignedJwtToken();
+
+    res.status(200).json({
+      success: true,
+      message: "Password reset successful",
+      data: {
+        user: {
+          id: user._id,
+          name: user.name,
+          email: user.email,
+          role: user.role,
+        },
+        token: jwtToken,
       },
     });
   } catch (error) {
