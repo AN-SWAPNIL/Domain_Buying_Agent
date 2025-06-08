@@ -5,12 +5,15 @@
   "main": "server/index.js",
   "type": "module",
   "scripts": {
-    "dev": "concurrently \"npm run server\" \"npm run client\"",
+    "start": "./deploy-static.sh",
+    "stop": "./stop.sh",
+    "setup": "./setup.sh",
+    "dev": "npm run server && npm run client",
     "server": "cd server && npm run dev",
     "client": "cd client && npm run dev",
     "build": "cd client && npm run build",
-    "start": "cd server && npm start",
-    "install-all": "npm install && cd server && npm install && cd ../client && npm install"
+    "install-all": "npm install && cd server && npm install && cd ../client && npm install",
+    "clean": "rm -rf logs && rm -rf server/node_modules && rm -rf client/node_modules"
   },
   "keywords": [
     "domain",

@@ -1,22 +1,27 @@
-import { ChatGoogleGenerativeAI } from "@langchain/google-genai";
-import { PromptTemplate } from "@langchain/core/prompts";
-import { StringOutputParser } from "@langchain/core/output_parsers";
-import { RunnableSequence } from "@langchain/core/runnables";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 
 class AIService {
   constructor() {
     try {
-      this.model = new ChatGoogleGenerativeAI({
-        modelName: "gemini-pro",
-        apiKey: process.env.GOOGLE_API_KEY || "demo-key",
-        temperature: 0.7,
-      });
-      this.outputParser = new StringOutputParser();
-      this.initializePrompts();
+      // Debug environment loading
+      console.log("🔍 Checking Google API Key...");
+      console.log("API Key present:", !!process.env.GOOGLE_API_KEY);
+      console.log("API Key length:", process.env.GOOGLE_API_KEY?.length || 0);
+
+      // Temporary hardcoded key for testing
+      const apiKey =
+        process.env.GOOGLE_API_KEY || "AIzaSyDTIx0PLphILmcqVpc5ooEW6Fo0Ogl596I";
+
+      if (!apiKey || apiKey === "demo-key") {
+        throw new Error("Google API Key not configured");
+      }
+
+      this.genAI = new GoogleGenerativeAI(apiKey);
+      this.model = this.genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+      console.log("✅ AI Service initialized successfully");
     } catch (error) {
-      console.warn("AI Service initialization failed:", error.message);
+      console.warn("⚠️ AI Service initialization failed:", error.message);
       this.model = null;
-      this.outputParser = new StringOutputParser();
     }
   }
 
@@ -93,25 +98,52 @@ class AIService {
 
   async suggestDomains(requirements) {
     try {
-      const chain = RunnableSequence.from([
-        this.domainSuggestionPrompt,
-        this.model,
-        this.outputParser,
-      ]);
+      if (!this.model) {
+        throw new Error("AI Service not available");
+      }
 
-      const response = await chain.invoke({
-        business: requirements.business || "General Business",
-        industry: requirements.industry || "Technology",
-        keywords: requirements.keywords?.join(", ") || "",
-        budget: requirements.budget || "$50-100",
-        extensions: requirements.extensions?.join(", ") || ".com, .net, .org",
-        audience: requirements.audience || "General Public",
-        context: requirements.context || "",
-      });
+      const prompt = `You are an expert domain name consultant. Based on the user's requirements, suggest relevant domain names.
 
-      // Parse JSON response
+User Requirements:
+- Business/Project: ${requirements.business || "General Business"}
+- Industry: ${requirements.industry || "Technology"}
+- Keywords: ${requirements.keywords?.join(", ") || ""}
+- Budget: ${requirements.budget || "$50-100"}
+- Preferred Extensions: ${
+        requirements.extensions?.join(", ") || ".com, .net, .org"
+      }
+- Target Audience: ${requirements.audience || "General Public"}
+
+Additional Context: ${requirements.context || ""}
+
+Please suggest 10 creative, memorable, and brandable domain names that:
+1. Are relevant to the business/industry
+2. Are easy to remember and spell
+3. Are SEO-friendly
+4. Are within budget range
+5. Use preferred extensions
+
+Return the response as a JSON object with this structure:
+{
+  "suggestions": [
+    {
+      "domain": "example.com",
+      "reasoning": "Why this domain is good",
+      "score": 8.5,
+      "category": "brandable"
+    }
+  ],
+  "analysis": "Brief analysis of the suggestions"
+}`;
+
+      const result = await this.model.generateContent(prompt);
+      const response = result.response.text();
+
+      // Try to parse JSON response
       try {
-        const suggestions = JSON.parse(response);
+        const suggestions = JSON.parse(
+          response.replace(/```json\n?/g, "").replace(/```\n?/g, "")
+        );
         return suggestions;
       } catch (parseError) {
         // Fallback: extract domains from text response
@@ -125,19 +157,53 @@ class AIService {
 
   async analyzeDomain(domain, context = "") {
     try {
-      const chain = RunnableSequence.from([
-        this.domainAnalysisPrompt,
-        this.model,
-        this.outputParser,
-      ]);
+      if (!this.model) {
+        throw new Error("AI Service not available");
+      }
 
-      const response = await chain.invoke({
-        domain,
-        context,
-      });
+      const prompt = `Analyze the following domain name and provide detailed insights:
+
+Domain: ${domain}
+User Context: ${context}
+
+Please analyze:
+1. Brandability (1-10)
+2. Memorability (1-10)
+3. SEO potential (1-10)
+4. Industry relevance (1-10)
+5. Overall recommendation (1-10)
+
+Provide insights on:
+- Strengths of this domain
+- Potential weaknesses
+- Target market suitability
+- Alternative suggestions if score is low
+
+Format as JSON with this structure:
+{
+  "domain": "${domain}",
+  "scores": {
+    "brandability": 8,
+    "memorability": 7,
+    "seo": 8,
+    "relevance": 9,
+    "overall": 8
+  },
+  "analysis": {
+    "strengths": ["strength1", "strength2"],
+    "weaknesses": ["weakness1", "weakness2"],
+    "targetMarket": "description",
+    "alternatives": ["alt1.com", "alt2.com"]
+  }
+}`;
+
+      const result = await this.model.generateContent(prompt);
+      const response = result.response.text();
 
       try {
-        return JSON.parse(response);
+        return JSON.parse(
+          response.replace(/```json\n?/g, "").replace(/```\n?/g, "")
+        );
       } catch (parseError) {
         return {
           domain,
@@ -159,18 +225,27 @@ class AIService {
 
   async consultUser(question, context = {}) {
     try {
-      const chain = RunnableSequence.from([
-        this.consultationPrompt,
-        this.model,
-        this.outputParser,
-      ]);
+      if (!this.model) {
+        throw new Error("AI Service not available");
+      }
 
-      const response = await chain.invoke({
-        question,
-        conversation: context.conversation || "",
-        preferences: JSON.stringify(context.preferences || {}),
-        domains: context.domains?.join(", ") || "",
-      });
+      const prompt = `You are a domain expert consultant. The user is asking: ${question}
+
+User Context:
+- Previous conversation: ${context.conversation || "First interaction"}
+- User preferences: ${JSON.stringify(context.preferences || {})}
+- Current domains of interest: ${
+        context.domains?.join(", ") || "None specified"
+      }
+
+Provide helpful, expert advice about domain names, web presence, branding, or related topics.
+Be conversational, helpful, and provide actionable insights.
+
+If the user is asking about pricing, availability, or technical aspects, provide general guidance
+but recommend they check current data through our system.`;
+
+      const result = await this.model.generateContent(prompt);
+      const response = result.response.text();
 
       return {
         response,

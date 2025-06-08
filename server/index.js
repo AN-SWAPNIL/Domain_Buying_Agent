@@ -5,6 +5,10 @@ import morgan from "morgan";
 import rateLimit from "express-rate-limit";
 import compression from "compression";
 import dotenv from "dotenv";
+
+// Load environment variables first
+dotenv.config();
+
 import connectDB from "./config/database.js";
 import errorHandler from "./middleware/errorHandler.js";
 import notFound from "./middleware/notFound.js";
@@ -16,9 +20,10 @@ import paymentRoutes from "./routes/payment.routes.js";
 import aiRoutes from "./routes/ai.routes.js";
 import userRoutes from "./routes/user.routes.js";
 
-dotenv.config();
-
 const app = express();
+
+// Trust proxy for ngrok
+app.set("trust proxy", true);
 
 // Connect to MongoDB
 connectDB();
@@ -27,20 +32,73 @@ connectDB();
 app.use(helmet());
 app.use(compression());
 
-// Rate limiting
+// Rate limiting - configured for ngrok proxy
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: 100, // limit each IP to 100 requests per windowMs
   message: "Too many requests from this IP, please try again later.",
+  trustProxy: true, // Trust ngrok proxy
+  keyGenerator: (req) => {
+    // Use a combination of IP and forwarded IP for ngrok
+    return req.ip || req.connection.remoteAddress || "anonymous";
+  },
 });
 app.use("/api/", limiter);
 
 // CORS configuration
+const allowedOrigins = [
+  process.env.CLIENT_URL || "http://localhost:5173",
+  "http://localhost:5173",
+  "http://localhost:5176",
+  "https://regular-innocent-pony.ngrok-free.app",
+  process.env.NGROK_STATIC_URL,
+  "https://*.ngrok-free.app",
+  "https://*.ngrok.io",
+];
+
 app.use(
   cors({
-    origin: process.env.CLIENT_URL || "http://localhost:5173",
+    origin: function (origin, callback) {
+      console.log("🔍 CORS check for origin:", origin);
+
+      // Allow requests with no origin (like mobile apps or curl requests)
+      if (!origin) {
+        console.log("✅ No origin - allowing request");
+        return callback(null, true);
+      }
+
+      // Check if the origin is in the allowed list or matches ngrok pattern
+      const isAllowed = allowedOrigins.some((allowed) => {
+        if (!allowed) return false;
+        return (
+          allowed === origin ||
+          (allowed.includes("*") && origin.includes("ngrok")) ||
+          origin.includes("regular-innocent-pony.ngrok-free.app")
+        );
+      });
+
+      if (isAllowed) {
+        console.log("✅ Origin allowed:", origin);
+        return callback(null, true);
+      }
+
+      console.log("❌ Origin rejected:", origin);
+      console.log("📋 Allowed origins:", allowedOrigins);
+      const msg =
+        "The CORS policy for this site does not allow access from the specified Origin.";
+      return callback(new Error(msg), false);
+    },
     credentials: true,
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization", "x-stripe-signature"],
   })
+);
+
+// Stripe webhook endpoint (must be before express.json())
+app.use(
+  "/api/payments/webhook",
+  express.raw({ type: "application/json" }),
+  paymentRoutes
 );
 
 // Body parsing middleware
@@ -67,13 +125,6 @@ app.use("/api/domains", domainRoutes);
 app.use("/api/payments", paymentRoutes);
 app.use("/api/ai", aiRoutes);
 app.use("/api/users", userRoutes);
-
-// Stripe webhook endpoint (needs to be before express.json())
-app.use(
-  "/api/webhook",
-  express.raw({ type: "application/json" }),
-  paymentRoutes
-);
 
 // Error handling middleware
 app.use(notFound);

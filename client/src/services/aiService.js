@@ -90,6 +90,21 @@ export const aiService = {
       });
       return response.data;
     } catch (error) {
+      console.error("AI chat error:", error);
+
+      // Check if it's an authentication error
+      if (error.response?.status === 401) {
+        throw new Error("Please log in to continue using the AI consultant.");
+      }
+
+      // Check if it's a network error
+      if (!error.response) {
+        throw new Error(
+          "Unable to connect to AI service. Please check your internet connection."
+        );
+      }
+
+      // For other errors, provide a fallback mock response
       console.warn("AI service not available, returning mock data");
 
       // Simple mock responses based on message content

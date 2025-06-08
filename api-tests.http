@@ -1,0 +1,163 @@
+### Domain Buying Agent API Tests
+### Use this file with REST Client extension in VS Code or similar HTTP clients
+
+### Variables
+@baseUrl = https://regular-innocent-pony.ngrok-free.app/api
+@localUrl = http://localhost:5000/api
+@authToken = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY4NDVlZWU3ZWFlYTk5MGVhMzE5NWIyMyIsImlhdCI6MTc0OTQxNDU2MiwiZXhwIjoxNzUwMDE5MzYyfQ.m2ntrXQfbf4zWD_qPvV3hvRaYtSMw8otJD0h_sSLH2A
+
+### 1. Health Check
+GET {{baseUrl}}/../health
+ngrok-skip-browser-warning: 1
+
+### 2. User Registration
+POST {{baseUrl}}/auth/register
+Content-Type: application/json
+ngrok-skip-browser-warning: 1
+
+{
+  "name": "Test User",
+  "email": "test@example.com",
+  "password": "Password123!"
+}
+
+### 3. User Login
+# @name login
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+ngrok-skip-browser-warning: 1
+
+{
+  "email": "test@example.com",
+  "password": "Password123!"
+}
+
+### 4. Get User Profile (requires auth)
+GET {{baseUrl}}/auth/me
+Authorization: Bearer {{authToken}}
+ngrok-skip-browser-warning: 1
+
+### 5. Domain Search (GET with query parameters)
+GET {{baseUrl}}/domains/search?q=example&extensions[]=com&extensions[]=net
+Authorization: Bearer {{authToken}}
+ngrok-skip-browser-warning: 1
+
+### 6. Domain Availability Check
+GET {{baseUrl}}/domains/check/example.com
+Authorization: Bearer {{authToken}}
+ngrok-skip-browser-warning: 1
+
+### 7. Domain Details
+GET {{baseUrl}}/domains/details/example.com
+Authorization: Bearer {{authToken}}
+ngrok-skip-browser-warning: 1
+
+### 7. AI Chat Consultation
+POST {{baseUrl}}/ai/chat
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+ngrok-skip-browser-warning: 1
+
+{
+  "message": "Help me find a good domain name for my tech startup",
+  "conversationId": null
+}
+
+### 8. Get AI Conversations
+GET {{baseUrl}}/ai/conversations
+Authorization: Bearer {{authToken}}
+ngrok-skip-browser-warning: 1
+
+### 9. Create Payment Intent
+POST {{baseUrl}}/payments/create-intent
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+ngrok-skip-browser-warning: 1
+
+{
+  "domain": "example.com",
+  "amount": 1299
+}
+
+### 10. Get Payment History
+GET {{baseUrl}}/payments/history
+Authorization: Bearer {{authToken}}
+ngrok-skip-browser-warning: 1
+
+### 11. Update User Profile
+PUT {{baseUrl}}/users/profile
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+ngrok-skip-browser-warning: 1
+
+{
+  "name": "Updated Name",
+  "preferences": {
+    "domainTypes": ["tech", "business"],
+    "budget": 2000
+  }
+}
+
+### 12. Password Reset Request
+POST {{baseUrl}}/auth/forgot-password
+Content-Type: application/json
+ngrok-skip-browser-warning: 1
+
+{
+  "email": "test@example.com"
+}
+
+### === LOCAL TESTING (PORT 5000) ===
+
+### Health Check (Local)
+GET {{localUrl}}/../health
+
+### Login (Local)
+POST {{localUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "test@example.com",
+  "password": "Password123!"
+}
+
+### Domain Search (Local)
+POST {{localUrl}}/domains/search
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+{
+  "domain": "test-domain.com"
+}
+
+### AI Chat (Local)
+POST {{localUrl}}/ai/chat
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+{
+  "message": "What's a good domain name for an e-commerce site?",
+  "conversationId": null
+}
+
+### === CURL EQUIVALENTS ===
+
+### Login with curl
+# curl -X POST https://regular-innocent-pony.ngrok-free.app/api/auth/login \
+#   -H "Content-Type: application/json" \
+#   -H "ngrok-skip-browser-warning: 1" \
+#   -d '{"email":"test@example.com","password":"Password123!"}'
+
+### Domain search with curl
+# curl -X POST https://regular-innocent-pony.ngrok-free.app/api/domains/search \
+#   -H "Content-Type: application/json" \
+#   -H "Authorization: Bearer YOUR_TOKEN_HERE" \
+#   -H "ngrok-skip-browser-warning: 1" \
+#   -d '{"domain":"example.com"}'
+
+### AI chat with curl
+# curl -X POST https://regular-innocent-pony.ngrok-free.app/api/ai/chat \
+#   -H "Content-Type: application/json" \
+#   -H "Authorization: Bearer YOUR_TOKEN_HERE" \
+#   -H "ngrok-skip-browser-warning: 1" \
+#   -d '{"message":"Help me find a domain name","conversationId":null}'

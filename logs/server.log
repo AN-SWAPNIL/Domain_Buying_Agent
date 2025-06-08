@@ -1,0 +1,28 @@
+
+> domain-buying-agent-server@1.0.0 start
+> node index.js
+
+🔍 Checking Google API Key...
+API Key present: false
+API Key length: 0
+✅ AI Service initialized successfully
+🚀 Server running on port 5000 in development mode
+✅ MongoDB Connected: ac-bhz02s5-shard-00-01.xmap8i1.mongodb.net
+🔍 CORS check for origin: undefined
+✅ No origin - allowing request
+[0mGET /health [32m200[0m 1.405 ms - 104[0m
+🔍 CORS check for origin: http://localhost:5173
+✅ Origin allowed: http://localhost:5173
+🔍 CORS check for origin: http://localhost:5173
+✅ Origin allowed: http://localhost:5173
+[0mPOST /api/auth/login [32m200[0m 150.604 ms - 363[0m
+🔍 CORS check for origin: http://localhost:5173
+✅ Origin allowed: http://localhost:5173
+🔍 CORS check for origin: http://localhost:5173
+✅ Origin allowed: http://localhost:5173
+[0mPOST /api/ai/chat [33m401[0m 1.279 ms - 65[0m
+🔍 CORS check for origin: http://localhost:5173
+✅ Origin allowed: http://localhost:5173
+🔍 CORS check for origin: http://localhost:5173
+✅ Origin allowed: http://localhost:5173
+[0mPOST /api/ai/chat [33m401[0m 0.819 ms - 65[0m

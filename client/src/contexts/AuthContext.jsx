@@ -72,6 +72,9 @@ const authReducer = (state, action) => {
 // Create context
 const AuthContext = createContext();
 
+// Export AuthContext for direct access if needed
+export { AuthContext };
+
 // Custom hook to use auth context
 export const useAuth = () => {
   const context = useContext(AuthContext);
@@ -90,11 +93,18 @@ export const AuthProvider = ({ children }) => {
     const checkAuthStatus = async () => {
       try {
         if (authService.isAuthenticated()) {
-          const userData = await authService.getCurrentUser();
-          dispatch({
-            type: AuthActionTypes.SET_USER,
-            payload: userData.user,
-          });
+          try {
+            const userData = await authService.getCurrentUser();
+            dispatch({
+              type: AuthActionTypes.SET_USER,
+              payload: userData.user,
+            });
+          } catch (apiError) {
+            // If getCurrentUser fails, the token might be invalid/expired
+            console.log("Token validation failed:", apiError.message);
+            authService.logout();
+            dispatch({ type: AuthActionTypes.LOGOUT });
+          }
         } else {
           dispatch({ type: AuthActionTypes.SET_LOADING, payload: false });
         }
@@ -106,6 +116,17 @@ export const AuthProvider = ({ children }) => {
     };
 
     checkAuthStatus();
+
+    // Listen for auth-failed events from the API interceptor
+    const handleAuthFailed = () => {
+      dispatch({ type: AuthActionTypes.LOGOUT });
+    };
+
+    window.addEventListener("auth-failed", handleAuthFailed);
+
+    return () => {
+      window.removeEventListener("auth-failed", handleAuthFailed);
+    };
   }, []);
 
   // Login function
