@@ -3,6 +3,7 @@ import Transaction from "../models/Transaction.model.js";
 import Domain from "../models/Domain.model.js";
 import stripeService from "../services/stripe.service.js";
 import namecheapService from "../services/namecheap.service.js";
+import emailService from "../services/email.service.js";
 
 // Create payment intent
 export const createPaymentIntent = async (req, res, next) => {
@@ -178,6 +179,21 @@ export const confirmPayment = async (req, res, next) => {
                 Date.now() + 365 * 24 * 60 * 60 * 1000
               ); // 1 year
               await domain.save();
+
+              // Send domain purchase confirmation email
+              emailService
+                .sendDomainPurchaseConfirmation(
+                  req.user.email,
+                  req.user.name,
+                  domain.fullDomain,
+                  transaction.amount.value
+                )
+                .catch((error) => {
+                  console.error(
+                    "Failed to send purchase confirmation email:",
+                    error
+                  );
+                });
             }
           }
         } catch (registrationError) {

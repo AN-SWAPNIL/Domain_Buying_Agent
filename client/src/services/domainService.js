@@ -2,26 +2,28 @@ import api from "./api";
 
 export const domainService = {
   // Search for domains
-  searchDomains: async (query, tlds = []) => {
+  searchDomains: async (q, extensions = []) => {
     try {
-      const response = await api.get("/domains/search", {
-        params: { query, tlds: tlds.join(",") },
-      });
+      const params = { q };
+      if (extensions.length > 0) {
+        params.extensions = extensions;
+      }
+      const response = await api.get("/domains/search", { params });
       return response.data;
     } catch (error) {
       console.warn("API not available, returning mock data");
       // Mock data for demonstration
-      const extensions =
-        tlds.length > 0
-          ? tlds
+      const extensionArray =
+        extensions.length > 0
+          ? extensions
           : [".com", ".net", ".org", ".io", ".co", ".ai", ".app"];
-      return extensions.map((ext) => ({
-        name: `${query}${ext}`,
+      return extensionArray.map((ext) => ({
+        name: `${q}${ext}`,
         available: Math.random() > 0.5,
         price: Math.floor(Math.random() * 50) + 10,
         premium: Math.random() > 0.8,
         registrar: "Namecheap",
-        description: `Perfect domain for your ${query} business`,
+        description: `Perfect domain for your ${q} business`,
       }));
     }
   },
@@ -38,6 +40,27 @@ export const domainService = {
         available: Math.random() > 0.5,
         price: Math.floor(Math.random() * 50) + 10,
         premium: Math.random() > 0.8,
+      };
+    }
+  },
+
+  // Get domain details by domain name
+  getDomainDetails: async (domain) => {
+    try {
+      const response = await api.get(`/domains/details/${domain}`);
+      return response.data;
+    } catch (error) {
+      console.warn("API not available, returning mock data");
+      return {
+        domain,
+        available: Math.random() > 0.5,
+        price: Math.floor(Math.random() * 50) + 10,
+        premium: Math.random() > 0.8,
+        analysis: {
+          seoScore: Math.floor(Math.random() * 100),
+          brandability: Math.floor(Math.random() * 100),
+          memorability: Math.floor(Math.random() * 100),
+        },
       };
     }
   },
@@ -162,8 +185,8 @@ export const domainService = {
     }
   },
 
-  // Get domain details
-  getDomainDetails: async (domainId) => {
+  // Get domain details by ID
+  getDomainById: async (domainId) => {
     try {
       const response = await api.get(`/domains/${domainId}`);
       return response.data;

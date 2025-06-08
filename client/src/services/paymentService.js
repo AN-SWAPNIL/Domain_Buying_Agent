@@ -2,8 +2,14 @@ import api from "./api";
 
 export const paymentService = {
   // Create payment intent
-  createPaymentIntent: async (amount, currency = "usd", metadata = {}) => {
-    const response = await api.post("/payments/create-payment-intent", {
+  createPaymentIntent: async (
+    domain,
+    amount,
+    currency = "usd",
+    metadata = {}
+  ) => {
+    const response = await api.post("/payments/create-intent", {
+      domain,
       amount,
       currency,
       metadata,
@@ -45,6 +51,14 @@ export const paymentService = {
   setDefaultPaymentMethod: async (paymentMethodId) => {
     const response = await api.put("/payments/default-payment-method", {
       paymentMethodId,
+    });
+    return response.data;
+  },
+
+  // Get payment history
+  getPaymentHistory: async (page = 1, limit = 10) => {
+    const response = await api.get("/payments/history", {
+      params: { page, limit },
     });
     return response.data;
   },

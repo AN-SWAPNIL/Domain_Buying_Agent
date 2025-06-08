@@ -1,6 +1,7 @@
 import { validationResult } from "express-validator";
 import User from "../models/User.model.js";
 import stripeService from "../services/stripe.service.js";
+import emailService from "../services/email.service.js";
 import crypto from "crypto";
 
 // Register user
@@ -44,6 +45,11 @@ export const register = async (req, res, next) => {
     } catch (stripeError) {
       console.log("Stripe customer creation failed:", stripeError.message);
     }
+
+    // Send welcome email (don't wait for it)
+    emailService.sendWelcomeEmail(user.email, user.name).catch((error) => {
+      console.error("Failed to send welcome email:", error);
+    });
 
     // Generate token
     const token = user.getSignedJwtToken();
@@ -213,13 +219,30 @@ export const forgotPassword = async (req, res, next) => {
 
     await user.save({ validateBeforeSave: false });
 
-    // For now, just return the token (in production, send via email)
-    // TODO: Implement email service to send reset link
-    res.status(200).json({
-      success: true,
-      message: "Password reset token generated",
-      resetToken, // Remove this in production
-    });
+    try {
+      // Send password reset email
+      await emailService.sendPasswordResetEmail(
+        user.email,
+        user.name,
+        resetToken
+      );
+
+      res.status(200).json({
+        success: true,
+        message: "Password reset email sent successfully",
+      });
+    } catch (emailError) {
+      // Reset the token fields if email fails
+      user.resetPasswordToken = undefined;
+      user.resetPasswordExpire = undefined;
+      await user.save({ validateBeforeSave: false });
+
+      console.error("Email service error:", emailError);
+      return res.status(500).json({
+        success: false,
+        message: "Email could not be sent. Please try again later.",
+      });
+    }
   } catch (error) {
     next(error);
   }

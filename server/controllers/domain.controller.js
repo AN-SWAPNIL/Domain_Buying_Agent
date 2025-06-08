@@ -3,6 +3,7 @@ import Domain from "../models/Domain.model.js";
 import Transaction from "../models/Transaction.model.js";
 import namecheapService from "../services/namecheap.service.js";
 import aiService from "../services/ai.service.js";
+import emailService from "../services/email.service.js";
 
 // Search domains with AI suggestions
 export const searchDomains = async (req, res, next) => {
