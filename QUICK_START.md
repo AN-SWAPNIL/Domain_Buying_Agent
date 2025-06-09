@@ -19,7 +19,7 @@ This single command will:
 ### Alternative Method:
 
 ```bash
-./deploy.sh
+./deploy-static.sh
 ```
 
 ## 🛑 To Stop Everything:
@@ -45,7 +45,22 @@ npm stop
    npm run setup
    ```
 
-2. **Configure Stripe Webhook**:
+2. **Setup Environment Variables**:
+
+   ```bash
+   # Copy environment files
+   cp server/.env.example server/.env
+   cp client/.env.example client/.env
+   ```
+
+   Then edit the `.env` files and fill in your API keys:
+
+   - Google Gemini AI API key
+   - Namecheap API credentials
+   - Stripe API keys
+   - MongoDB connection string
+
+3. **Configure Stripe Webhook**:
    - After running `npm start`, copy the webhook URL shown in terminal
    - Go to [Stripe Dashboard](https://dashboard.stripe.com/test/webhooks)
    - Add endpoint with the webhook URL
@@ -53,7 +68,7 @@ npm stop
 
 ## 📱 Access Points:
 
-- **Frontend**: http://localhost:5176
+- **Frontend**: http://localhost:5173
 - **Backend**: http://localhost:5000
 - **ngrok Dashboard**: http://localhost:4040
 - **Public URL**: Changes each time (displayed in terminal)

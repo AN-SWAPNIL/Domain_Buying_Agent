@@ -4,7 +4,7 @@
 echo "🚀 Setting up Domain Buying Agent..."
 
 # Make script executable
-chmod +x deploy.sh
+chmod +x deploy-static.sh
 
 # Create logs directory
 mkdir -p logs
@@ -16,4 +16,4 @@ cd server && npm install
 echo "📦 Installing client dependencies..."
 cd ../client && npm install
 
-echo "✅ Setup completed! Run ./deploy.sh to start the application."
+echo "✅ Setup completed! Run npm start to start the application."

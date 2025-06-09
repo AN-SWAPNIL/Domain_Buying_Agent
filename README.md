@@ -56,9 +56,9 @@ A comprehensive MERN stack application with AI integration for domain discovery,
 
 ### Development Servers
 
-Both client (port 5176) and server (port 5000) are currently running and functional with mock data.
+Both client (port 5173) and server (port 5000) are currently running and functional with mock data.
 
-- **Frontend**: http://localhost:5176
+- **Frontend**: http://localhost:5173
 - **Backend API**: http://localhost:5000
 
 ### Current Status
@@ -120,6 +120,8 @@ Both client (port 5176) and server (port 5000) are currently running and functio
 
 ## 🔧 Environment Setup
 
+> **Important**: Make sure to copy the `.env.example` files to `.env` and fill in your actual API keys and configuration values.
+
 ### Server (.env)
 
 ```env
@@ -127,17 +129,40 @@ PORT=5000
 NODE_ENV=development
 MONGODB_URI=mongodb://localhost:27017/domain-buying-agent
 JWT_SECRET=your-jwt-secret-here
-CLIENT_URL=http://localhost:5176
+JWT_EXPIRES_IN=7d
+CLIENT_URL=http://localhost:5173
+
+# Google Gemini AI
 GOOGLE_API_KEY=your-google-ai-api-key
+
+# Namecheap API
+NAMECHEAP_API_USER=your-namecheap-username
 NAMECHEAP_API_KEY=your-namecheap-api-key
+NAMECHEAP_CLIENT_IP=your-client-ip
+NAMECHEAP_SANDBOX=true
+
+# Stripe
+STRIPE_PUBLISHABLE_KEY=pk_test_your-stripe-publishable-key
 STRIPE_SECRET_KEY=sk_test_your-stripe-secret-key
+STRIPE_WEBHOOK_SECRET=whsec_your-webhook-secret
+
+# Email Configuration (Optional)
+MAIL_HOST=smtp.gmail.com
+MAIL_PORT=587
+MAIL_USERNAME=your-email@gmail.com
+MAIL_PASSWORD=your-app-password
+MAIL_FROM=Domain Buying Agent <noreply@yourdomain.com>
 ```
 
 ### Client (.env)
 
 ```env
 VITE_API_URL=http://localhost:5000/api
+VITE_API_TIMEOUT=10000
 VITE_STRIPE_PUBLISHABLE_KEY=pk_test_your-stripe-publishable-key
+VITE_APP_NAME=Domain Buying Agent
+VITE_APP_VERSION=1.0.0
+VITE_DEV_MODE=true
 ```
 
 ## 📁 Project Structure
@@ -165,15 +190,18 @@ Domain_Buying_Agent/
 ```bash
 # Start both servers (from root directory)
 # Server: http://localhost:5000
-# Client: http://localhost:5176
+# Client: http://localhost:5173
+npm start
 
 # Start server only
-cd server && npm start
+cd server && npm run dev
 
 # Start client only
 cd client && npm run dev
 
 # Install dependencies
+npm run install-all
+# OR individually:
 cd server && npm install
 cd client && npm install
 ```
