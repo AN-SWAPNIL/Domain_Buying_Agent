@@ -72,18 +72,26 @@ class StripeService {
   async confirmPayment(paymentIntentId) {
     try {
       console.log("Retrieving PaymentIntent with ID:", paymentIntentId);
+
+      // Get payment intent first
       const paymentIntent = await this.stripe.paymentIntents.retrieve(
-        paymentIntentId,
-        {
-          expand: ["charges.data.payment_method_details"],
-        }
+        paymentIntentId
       );
       console.log("Retrieved PaymentIntent. Status:", paymentIntent.status);
-      console.log("Charges present:", !!paymentIntent.charges);
-      console.log(
-        "Charges data length:",
-        paymentIntent.charges?.data?.length || 0
-      );
+
+      // Always fetch charges separately for reliability
+      const charges = await this.stripe.charges.list({
+        payment_intent: paymentIntentId,
+        expand: ["data.payment_method_details"],
+      });
+
+      console.log("Charges retrieved separately:", charges.data.length);
+
+      // Attach charges to payment intent for consistency
+      paymentIntent.charges = {
+        data: charges.data,
+      };
+
       return paymentIntent;
     } catch (error) {
       console.error("Stripe Confirm Payment Error:", error.message);

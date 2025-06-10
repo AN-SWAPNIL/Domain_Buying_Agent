@@ -44,12 +44,9 @@ export const createPaymentIntent = async (req, res, next) => {
         });
       }
 
-      // Create a unique domain record for this user
-      // Use combination of domain name and user ID to ensure uniqueness
-      const uniqueName = `${domainName}_${req.user.id}_${Date.now()}`;
-
+      // Create a clean domain record for this user
       domainRecord = new Domain({
-        name: uniqueName,
+        name: domainName,
         extension: extension,
         fullDomain: domain,
         owner: req.user.id,
@@ -68,34 +65,11 @@ export const createPaymentIntent = async (req, res, next) => {
         await domainRecord.save();
       } catch (error) {
         if (error.code === 11000) {
-          // Handle duplicate key error - find existing domain for this user
-          domainRecord = await Domain.findOne({
-            fullDomain: domain,
-            owner: req.user.id,
+          // Handle duplicate key error - domain might be taken by another user
+          return res.status(400).json({
+            success: false,
+            message: "This domain is no longer available for purchase",
           });
-
-          if (!domainRecord) {
-            // If still no domain found, create one with an even more unique name
-            const fallbackName = `${domainName}_${
-              req.user.id
-            }_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-            domainRecord = new Domain({
-              name: fallbackName,
-              extension: extension,
-              fullDomain: domain,
-              owner: req.user.id,
-              status: "pending",
-              isAvailable: true,
-              registrar: "namecheap",
-              pricing: {
-                cost: amount / 100,
-                markup: 0,
-                sellingPrice: amount / 100,
-                currency: currency.toUpperCase(),
-              },
-            });
-            await domainRecord.save();
-          }
         } else {
           throw error;
         }
@@ -183,6 +157,8 @@ export const confirmPayment = async (req, res, next) => {
         message: "Payment intent ID is required",
       });
     }
+
+    console.log("🔄 Processing payment intent:", paymentIntentId);
 
     // Get payment intent from Stripe
     const paymentIntent = await stripeService.confirmPayment(paymentIntentId);

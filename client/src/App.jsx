@@ -23,6 +23,7 @@ import DomainSearch from "./pages/DomainSearch";
 import AIConsultant from "./pages/AIConsultant";
 import MyDomains from "./pages/MyDomains";
 import Profile from "./pages/Profile";
+import Settings from "./pages/Settings";
 import Payment from "./pages/Payment";
 import NotFound from "./pages/NotFound";
 
@@ -91,6 +92,14 @@ function App() {
                     element={
                       <ProtectedRoute>
                         <Profile />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/settings"
+                    element={
+                      <ProtectedRoute>
+                        <Settings />
                       </ProtectedRoute>
                     }
                   />

@@ -32,10 +32,27 @@ export const searchDomains = async (req, res, next) => {
     for (const ext of extensionArray) {
       const domain = `${query}${ext}`;
       try {
-        const availability = await namecheapService.checkDomainAvailability(
-          domain
-        );
-        searchResults.push(availability);
+        // First check if domain is already registered in our database
+        const existingDomain = await Domain.findOne({
+          fullDomain: domain.toLowerCase(),
+          status: { $in: ["registered", "pending", "payment_completed"] },
+        });
+
+        if (existingDomain) {
+          searchResults.push({
+            domain,
+            available: false,
+            price: 0,
+            currency: "USD",
+            message: "Domain is already registered",
+          });
+        } else {
+          // Check with registrar if not in our database
+          const availability = await namecheapService.checkDomainAvailability(
+            domain
+          );
+          searchResults.push(availability);
+        }
       } catch (error) {
         console.log(`Error checking ${domain}:`, error.message);
       }
@@ -81,6 +98,27 @@ export const checkAvailability = async (req, res, next) => {
       });
     }
 
+    // First check if domain is already registered in our database
+    const existingDomain = await Domain.findOne({
+      fullDomain: domain.toLowerCase(),
+      status: { $in: ["registered", "pending", "payment_completed"] },
+    });
+
+    if (existingDomain) {
+      return res.status(200).json({
+        success: true,
+        data: {
+          domain,
+          available: false,
+          price: 0,
+          currency: "USD",
+          message: "Domain is already registered",
+          registeredBy: existingDomain.owner ? "another user" : "system",
+        },
+      });
+    }
+
+    // If not in our database, check with registrar
     const availability = await namecheapService.checkDomainAvailability(domain);
 
     res.status(200).json({
@@ -368,6 +406,37 @@ export const transferDomain = async (req, res, next) => {
         domain: transferDomain,
         transaction,
         message: "Domain transfer initiated. Complete payment to finalize.",
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Get DNS records
+export const getDNS = async (req, res, next) => {
+  try {
+    const { domainId } = req.params;
+
+    const domain = await Domain.findOne({
+      _id: domainId,
+      owner: req.user.id,
+    });
+
+    if (!domain) {
+      return res.status(404).json({
+        success: false,
+        message: "Domain not found",
+      });
+    }
+
+    // Return DNS records from database
+    res.status(200).json({
+      success: true,
+      data: {
+        domain: domain.fullDomain,
+        dnsRecords: domain.dnsRecords || [],
+        status: domain.status,
       },
     });
   } catch (error) {

@@ -6,7 +6,6 @@ const domainSchema = new mongoose.Schema(
     name: {
       type: String,
       required: [true, "Domain name is required"],
-      unique: true,
       lowercase: true,
       trim: true,
     },
@@ -18,12 +17,19 @@ const domainSchema = new mongoose.Schema(
     fullDomain: {
       type: String,
       required: true,
-      unique: true,
       lowercase: true,
     },
     status: {
       type: String,
-      enum: ["available", "registered", "pending", "expired", "reserved"],
+      enum: [
+        "available",
+        "registered",
+        "pending",
+        "expired",
+        "reserved",
+        "payment_completed",
+        "refunded",
+      ],
       default: "available",
     },
     owner: {
@@ -94,6 +100,17 @@ domainSchema.index({ fullDomain: 1 });
 domainSchema.index({ owner: 1 });
 domainSchema.index({ status: 1 });
 domainSchema.index({ "pricing.sellingPrice": 1 });
+
+// Compound index: Only one registered domain per fullDomain
+domainSchema.index(
+  { fullDomain: 1, status: 1 },
+  {
+    unique: true,
+    partialFilterExpression: {
+      status: { $in: ["registered", "payment_completed"] },
+    },
+  }
+);
 
 // Virtual for formatted price
 domainSchema.virtual("formattedPrice").get(function () {

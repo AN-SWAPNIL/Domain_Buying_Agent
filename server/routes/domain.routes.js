@@ -8,6 +8,7 @@ import {
   purchaseDomain,
   renewDomain,
   transferDomain,
+  getDNS,
   updateDNS,
 } from "../controllers/domain.controller.js";
 import { protect } from "../middleware/auth.js";
@@ -85,6 +86,7 @@ router.get("/details/:domain", getDomainDetails);
 // Protected routes
 router.use(protect);
 router.get("/my-domains", getUserDomains);
+router.get("/:domainId/dns", getDNS);
 router.post("/purchase", purchaseValidation, purchaseDomain);
 router.post("/renew/:domainId", renewDomain);
 router.post("/transfer", transferDomain);

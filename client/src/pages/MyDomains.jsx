@@ -18,7 +18,7 @@ const MyDomains = () => {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
-  const [selectedDomain, setSelectedDomain] = useState(null);
+  const [selectedDomain, setSelectedDomain] = useState(null); // Will store { id, name }
   const [showDNSModal, setShowDNSModal] = useState(false);
   const [dnsRecords, setDnsRecords] = useState([]);
 
@@ -66,11 +66,11 @@ const MyDomains = () => {
     }
   };
 
-  const handleManageDNS = async (domainName) => {
+  const handleManageDNS = async (domainId, domainName) => {
     try {
-      const records = await domainService.getDNSRecords(domainName);
+      const records = await domainService.getDNSRecords(domainId);
       setDnsRecords(records);
-      setSelectedDomain(domainName);
+      setSelectedDomain({ id: domainId, name: domainName });
       setShowDNSModal(true);
     } catch (error) {
       console.error("DNS error:", error);
@@ -163,7 +163,7 @@ const MyDomains = () => {
 
           <div className="flex flex-col space-y-2">
             <button
-              onClick={() => handleManageDNS(domain.name)}
+              onClick={() => handleManageDNS(domain._id, domain.fullDomain)}
               className="btn-outline text-sm flex items-center space-x-1"
             >
               <Cog6ToothIcon className="h-4 w-4" />
@@ -217,9 +217,9 @@ const MyDomains = () => {
 
     const handleAddRecord = async () => {
       try {
-        await domainService.addDNSRecord(selectedDomain, newRecord);
+        await domainService.addDNSRecord(selectedDomain.name, newRecord);
         const updatedRecords = await domainService.getDNSRecords(
-          selectedDomain
+          selectedDomain.id
         );
         setDnsRecords(updatedRecords);
         setNewRecord({ type: "A", name: "", value: "", ttl: 3600 });
@@ -232,9 +232,9 @@ const MyDomains = () => {
 
     const handleDeleteRecord = async (recordId) => {
       try {
-        await domainService.deleteDNSRecord(selectedDomain, recordId);
+        await domainService.deleteDNSRecord(selectedDomain.name, recordId);
         const updatedRecords = await domainService.getDNSRecords(
-          selectedDomain
+          selectedDomain.id
         );
         setDnsRecords(updatedRecords);
         alert("DNS record deleted successfully!");
@@ -256,7 +256,7 @@ const MyDomains = () => {
           <div className="p-6 border-b border-gray-200">
             <div className="flex items-center justify-between">
               <h2 className="text-xl font-semibold text-gray-900">
-                DNS Management - {selectedDomain}
+                DNS Management - {selectedDomain?.name}
               </h2>
               <button
                 onClick={() => setShowDNSModal(false)}
