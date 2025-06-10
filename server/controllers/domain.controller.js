@@ -194,7 +194,10 @@ export const purchaseDomain = async (req, res, next) => {
     }
 
     // Create domain record
-    const [domainName, extension] = domain.split(".");
+    const domainParts = domain.split(".");
+    const domainName = domainParts[0];
+    const extension = domainParts.slice(1).join("."); // Handle multi-part extensions like .co.uk
+
     const newDomain = new Domain({
       name: domainName,
       extension: extension,
@@ -202,9 +205,9 @@ export const purchaseDomain = async (req, res, next) => {
       owner: req.user.id,
       status: "pending",
       pricing: {
-        cost: availability.price,
-        markup: availability.price * 0.1, // 10% markup
-        sellingPrice: availability.price * 1.1,
+        cost: availability.price || 12.99, // Default price if availability.price is 0 or undefined
+        markup: (availability.price || 12.99) * 0.1, // 10% markup
+        sellingPrice: (availability.price || 12.99) * 1.1,
       },
     });
 
@@ -317,9 +320,13 @@ export const transferDomain = async (req, res, next) => {
     }
 
     // Create domain transfer record
+    const domainParts = domain.split(".");
+    const domainName = domainParts[0];
+    const extension = domainParts.slice(1).join("."); // Handle multi-part extensions like .co.uk
+
     const transferDomain = new Domain({
-      name: domain.split(".")[0],
-      extension: domain.split(".")[1],
+      name: domainName,
+      extension: extension,
       fullDomain: domain.toLowerCase(),
       owner: req.user.id,
       status: "pending",

@@ -4,7 +4,7 @@
 ### Variables
 @baseUrl = https://regular-innocent-pony.ngrok-free.app/api
 @localUrl = http://localhost:5000/api
-@authToken = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY4NDVlZWU3ZWFlYTk5MGVhMzE5NWIyMyIsImlhdCI6MTc0OTQxNDU2MiwiZXhwIjoxNzUwMDE5MzYyfQ.m2ntrXQfbf4zWD_qPvV3hvRaYtSMw8otJD0h_sSLH2A
+@authToken = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY4NDc0NTU4YTUzNzExNjBmNDhiNzhhNiIsImlhdCI6MTc0OTUwMTMzOCwiZXhwIjoxNzUwMTA2MTM4fQ.oltwyLpbu6ycQHtwcw6NUvVzRADmrjSKjMLdMGDP_TI
 
 ### 1. Health Check
 GET {{baseUrl}}/../health
@@ -17,8 +17,24 @@ ngrok-skip-browser-warning: 1
 
 {
   "name": "Test User",
-  "email": "test@example.com",
+  "email": "test3@example.com",
   "password": "Password123!"
+}
+
+### Response Body
+```json
+{
+  "success": true,
+  "data": {
+    "user": {
+      "id": "68474558a5371160f48b78a6",
+      "name": "Test User",
+      "email": "test3@example.com",
+      "role": "user",
+      "createdAt": "2025-06-09T20:34:32.893Z"
+    },
+    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY4NDc0NTU4YTUzNzExNjBmNDhiNzhhNiIsImlhdCI6MTc0OTUwMTMzOCwiZXhwIjoxNzUwMTA2MTM4fQ.oltwyLpbu6ycQHtwcw6NUvVzRADmrjSKjMLdMGDP_TI"
+  }
 }
 
 ### 3. User Login
@@ -28,8 +44,24 @@ Content-Type: application/json
 ngrok-skip-browser-warning: 1
 
 {
-  "email": "test@example.com",
+  "email": "test3@example.com",
   "password": "Password123!"
+}
+
+### Response Body
+```json
+{
+  "success": true,
+  "data": {
+    "user": {
+      "id": "68474558a5371160f48b78a6",
+      "name": "Test User",
+      "email": "test3@example.com",
+      "role": "user",
+      "createdAt": "2025-06-09T20:34:32.893Z"
+    },
+    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY4NDc0NTU4YTUzNzExNjBmNDhiNzhhNiIsImlhdCI6MTc0OTUwMTMzOCwiZXhwIjoxNzUwMTA2MTM4fQ.oltwyLpbu6ycQHtwcw6NUvVzRADmrjSKjMLdMGDP_TI"
+  }
 }
 
 ### 4. Get User Profile (requires auth)
@@ -37,22 +69,222 @@ GET {{baseUrl}}/auth/me
 Authorization: Bearer {{authToken}}
 ngrok-skip-browser-warning: 1
 
+### Response Body
+```json
+{
+  "success": true,
+  "data": {
+    "user": {
+      "id": "68474558a5371160f48b78a6",
+      "name": "Test User",
+      "email": "test3@example.com",
+      "role": "user",
+      "profile": {
+        "address": {}
+      },
+      "preferences": {
+        "notifications": {
+          "email": true,
+          "sms": false
+        },
+        "currency": "USD"
+      },
+      "createdAt": "2025-06-09T20:34:32.893Z"
+    }
+  }
+}
+
 ### 5. Domain Search (GET with query parameters)
 GET {{baseUrl}}/domains/search?q=example&extensions[]=com&extensions[]=net
 Authorization: Bearer {{authToken}}
 ngrok-skip-browser-warning: 1
+
+### Response Body
+```json
+{
+  "success": true,
+  "data": {
+    "query": "example",
+    "directMatches": [
+      {
+        "domain": "examplecom",
+        "available": false,
+        "price": 0,
+        "currency": "USD"
+      },
+      {
+        "domain": "examplenet",
+        "available": false,
+        "price": 0,
+        "currency": "USD"
+      }
+    ],
+    "aiSuggestions": [
+      {
+        "domain": "exampletechsol.com",
+        "reasoning": "Suggested domain option 1",
+        "brandabilityScore": 7,
+        "extension": "com"
+      },
+      {
+        "domain": "exampletechhub.com",
+        "reasoning": "Suggested domain option 2",
+        "brandabilityScore": 7,
+        "extension": "com"
+      },
+      {
+        "domain": "exampletechnow.com",
+        "reasoning": "Suggested domain option 3",
+        "brandabilityScore": 7,
+        "extension": "com"
+      },
+      {
+        "domain": "exampletechpro.com",
+        "reasoning": "Suggested domain option 4",
+        "brandabilityScore": 7,
+        "extension": "com"
+      },
+      {
+        "domain": "getExample.net",
+        "reasoning": "Suggested domain option 5",
+        "brandabilityScore": 7,
+        "extension": "net"
+      },
+      {
+        "domain": "exampletechguide.com",
+        "reasoning": "Suggested domain option 6",
+        "brandabilityScore": 7,
+        "extension": "com"
+      },
+      {
+        "domain": "exampletechlink.com",
+        "reasoning": "Suggested domain option 7",
+        "brandabilityScore": 7,
+        "extension": "com"
+      },
+      {
+        "domain": "exampletechinnov.com",
+        "reasoning": "Suggested domain option 8",
+        "brandabilityScore": 7,
+        "extension": "com"
+      },
+      {
+        "domain": "easyExample.net",
+        "reasoning": "Suggested domain option 9",
+        "brandabilityScore": 7,
+        "extension": "net"
+      },
+      {
+        "domain": "exampletechboost.com",
+        "reasoning": "Suggested domain option 10",
+        "brandabilityScore": 7,
+        "extension": "com"
+      }
+    ],
+    "searchedAt": "2025-06-09T20:38:02.856Z"
+  }
+}
 
 ### 6. Domain Availability Check
 GET {{baseUrl}}/domains/check/example.com
 Authorization: Bearer {{authToken}}
 ngrok-skip-browser-warning: 1
 
+### Response Body
+```json
+{
+  "success": true,
+  "data": {
+    "domain": "example.com",
+    "available": false,
+    "price": 0,
+    "currency": "USD"
+  }
+}
+
 ### 7. Domain Details
 GET {{baseUrl}}/domains/details/example.com
 Authorization: Bearer {{authToken}}
 ngrok-skip-browser-warning: 1
 
-### 7. AI Chat Consultation
+### Response Body
+```json
+{
+  "success": true,
+  "data": {
+    "domain": "example.com",
+    "info": {
+      "pricing": {
+        "cost": 12.99,
+        "markup": 0,
+        "sellingPrice": 12.99,
+        "currency": "USD"
+      },
+      "metadata": {
+        "suggestedByAI": false
+      },
+      "_id": "6846125162daaabc518723ef",
+      "name": "example",
+      "extension": "com",
+      "fullDomain": "example.com",
+      "status": "pending",
+      "owner": "6845eee7eaea990ea3195b23",
+      "registrar": "namecheap",
+      "autoRenew": false,
+      "tags": [],
+      "dnsRecords": [],
+      "createdAt": "2025-06-08T22:44:33.911Z",
+      "updatedAt": "2025-06-08T22:44:33.911Z",
+      "__v": 0
+    },
+    "analysis": {
+      "domain": "example.com",
+      "analysis": {
+        "brandability": {
+          "score": 1,
+          "insights": "The domain 'example.com' is the quintessential placeholder domain. It lacks any unique branding elements and offers no inherent brand identity.  It's impossible to build a brand around this name effectively."
+        },
+        "memorability": {
+          "score": 1,
+          "insights": "While extremely memorable in the sense that everyone knows it, this memorability is entirely negative in a branding context. It's memorable because it's a placeholder, not because it's distinctive or catchy."
+        },
+        "seo_potential": {
+          "score": 1,
+          "insights": "The domain offers no SEO advantages.  In fact, its generic nature may hurt SEO efforts as it doesn't provide any relevant keywords or context for search engines."
+        },
+        "industry_relevance": {
+          "score": 1,
+          "insights": "The domain is completely irrelevant to any specific industry. Its lack of specificity makes it unsuitable for targeted marketing and branding within any niche."
+        },
+        "overall_recommendation": {
+          "score": 1,
+          "insights": "This is not a viable domain name for any serious business or project. It's a placeholder and should never be used for a real-world application."
+        },
+        "strengths": [
+          "Universally recognized (though negatively)"
+        ],
+        "weaknesses": [
+          "Generic and lacks brand identity",
+          "No SEO value",
+          "No industry relevance",
+          "Not memorable in a positive sense",
+          "Associated with placeholders and examples, not real businesses"
+        ],
+        "target_market_suitability": "Completely unsuitable for any target market.  It would be detrimental to any business using it.",
+        "alternative_suggestions": [
+          "Brainstorm keywords related to your business and industry.",
+          "Use a domain name generator to find available options.",
+          "Consider incorporating your company name or a memorable phrase.",
+          "Prioritize a .com domain for optimal brand recognition.",
+          "Check for trademark conflicts before registering a domain."
+        ]
+      }
+    },
+    "checkedAt": "2025-06-09T20:39:13.402Z"
+  }
+}
+
+### 8. AI Chat Consultation
 POST {{baseUrl}}/ai/chat
 Content-Type: application/json
 Authorization: Bearer {{authToken}}
@@ -63,28 +295,225 @@ ngrok-skip-browser-warning: 1
   "conversationId": null
 }
 
-### 8. Get AI Conversations
+### Response Body
+```json
+{
+  "success": true,
+  "data": {
+    "sessionId": "6c2a79b6-937a-49bb-8420-cedba5d8dcde",
+    "message": "Okay, let's brainstorm some awesome domain names for your tech startup!  Before we dive in, tell me a bit more about your company.  Knowing your niche, target audience, and what problem you're solving will help me suggest names that are both catchy and relevant.\n\nFor example:\n\n* **What's the name of your company (or a working title)?**  Even if it's just a placeholder, it gives me a starting point.\n* **What does your company do?**  A brief description of your product or service is crucial.  Are you building AI software?  A new social media platform?  A revolutionary SaaS tool?\n* **Who is your target audience?**  Are you targeting businesses, consumers, developers, or a specific demographic?\n* **What feeling or image do you want your brand to evoke?**  Modern?  Trustworthy?  Innovative?  Playful?\n\nOnce I have this information, I can help you generate some ideas, considering factors like:\n\n* **Memorability:**  Is it easy to remember and spell?\n* **Availability:**  Is the domain name available (I can't check availability directly, but I recommend using our system to verify this)?  Are the corresponding social media handles available too?\n* **Relevance:**  Does it accurately reflect your company's mission and offerings?\n* **Branding potential:**  Does it lend itself to a strong visual identity and marketing strategy?\n\nLet's avoid generic terms.  Instead, aim for something unique and memorable that will help your startup stand out in a crowded market.  We can also explore different domain extensions like `.com`, `.tech`, `.ai`, etc., depending on your brand and target audience.  The `.com` extension is still the gold standard, but others can be relevant and available.\n\nDon't hesitate to share any initial ideas you have – even if they seem imperfect. We can work together to refine them or build upon them. Let's get started!\n",
+    "suggestions": [
+      "Okay, let's brainstorm some awesome domain names for your tech startup!  Before we dive in, tell me a bit more about your company.  Knowing your niche, target audience, and what problem you're solving will help me suggest names that are both catchy and relevant.",
+      "Once I have this information, I can help you generate some ideas, considering factors like:",
+      "* **Availability:**  Is the domain name available (I can't check availability directly, but I recommend using our system to verify this)?  Are the corresponding social media handles available too?"
+    ],
+    "conversation": {
+      "id": "684746cea5371160f48b78b7",
+      "messageCount": 2,
+      "lastMessage": {
+        "role": "assistant",
+        "content": "Okay, let's brainstorm some awesome domain names for your tech startup!  Before we dive in, tell me a bit more about your company.  Knowing your niche, target audience, and what problem you're solving will help me suggest names that are both catchy and relevant.\n\nFor example:\n\n* **What's the name of your company (or a working title)?**  Even if it's just a placeholder, it gives me a starting point.\n* **What does your company do?**  A brief description of your product or service is crucial.  Are you building AI software?  A new social media platform?  A revolutionary SaaS tool?\n* **Who is your target audience?**  Are you targeting businesses, consumers, developers, or a specific demographic?\n* **What feeling or image do you want your brand to evoke?**  Modern?  Trustworthy?  Innovative?  Playful?\n\nOnce I have this information, I can help you generate some ideas, considering factors like:\n\n* **Memorability:**  Is it easy to remember and spell?\n* **Availability:**  Is the domain name available (I can't check availability directly, but I recommend using our system to verify this)?  Are the corresponding social media handles available too?\n* **Relevance:**  Does it accurately reflect your company's mission and offerings?\n* **Branding potential:**  Does it lend itself to a strong visual identity and marketing strategy?\n\nLet's avoid generic terms.  Instead, aim for something unique and memorable that will help your startup stand out in a crowded market.  We can also explore different domain extensions like `.com`, `.tech`, `.ai`, etc., depending on your brand and target audience.  The `.com` extension is still the gold standard, but others can be relevant and available.\n\nDon't hesitate to share any initial ideas you have – even if they seem imperfect. We can work together to refine them or build upon them. Let's get started!\n",
+        "timestamp": "2025-06-09T20:40:51.183Z",
+        "metadata": {
+          "model": "gemini-pro",
+          "confidence": 0.9
+        },
+        "_id": "684746d3a5371160f48b78b9"
+      }
+    }
+  }
+}
+
+### 9. Get AI Conversations
 GET {{baseUrl}}/ai/conversations
 Authorization: Bearer {{authToken}}
 ngrok-skip-browser-warning: 1
 
-### 9. Create Payment Intent
+### Response Body
+```json
+{
+  "success": true,
+  "data": {
+    "conversations": [
+      {
+        "sessionId": "6c2a79b6-937a-49bb-8420-cedba5d8dcde",
+        "status": "active",
+        "messageCount": 2,
+        "lastMessage": "Okay, let's brainstorm some awesome domain names for your tech startup!  Before we dive in, tell me ...",
+        "recommendationCount": 3,
+        "createdAt": "2025-06-09T20:40:51.186Z",
+        "updatedAt": "2025-06-09T20:40:51.186Z"
+      }
+    ],
+    "pagination": {
+      "page": 1,
+      "limit": 10,
+      "total": 1
+    }
+  }
+}
+
+### 10. Create Payment Intent
 POST {{baseUrl}}/payments/create-intent
 Content-Type: application/json
 Authorization: Bearer {{authToken}}
 ngrok-skip-browser-warning: 1
 
 {
-  "domain": "example.com",
+  "domain": "example2.com",
   "amount": 1299
 }
 
-### 10. Get Payment History
+### Response Body
+```json
+{
+  "success": true,
+  "data": {
+    "clientSecret": "pi_3RYCX54g2lUtivUP1RxtnMZa_secret_XyB0layDLNZEcnVAiU5Qv9iyb",
+    "paymentIntentId": "pi_3RYCX54g2lUtivUP1RxtnMZa",
+    "amount": 1299,
+    "currency": "usd"
+  }
+}
+```
+
+### 11. Confirm Payment
+# NOTE: This endpoint confirms a PaymentIntent that has been successfully processed.
+# To test this properly, you need to:
+# 1. Create a PaymentIntent using API #10
+# 2. Use Stripe's test frontend or the actual payment form to process the payment
+# 3. Then use this API to confirm the payment on the backend
+# 
+# For testing without frontend integration, you can:
+# - Use Stripe CLI to simulate webhook events
+# - Or use a successfully processed PaymentIntent ID from Stripe Dashboard
+
+POST {{baseUrl}}/payments/confirm-payment
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+ngrok-skip-browser-warning: 1
+
+{
+  "paymentIntentId": "pi_3RYCX54g2lUtivUP1RxtnMZa"
+}
+
+### Expected Response (when PaymentIntent status is "succeeded")
+```json
+{
+  "success": true,
+  "data": {
+    "transaction": {
+      "_id": "68474758a5371160f48b78cf",
+      "user": "68474558a5371160f48b78a6",
+      "domain": {
+        "_id": "68474757a5371160f48b78cc",
+        "fullDomain": "example2.com",
+        "status": "registered"
+      },
+      "type": "purchase",
+      "status": "completed",
+      "amount": {
+        "value": 12.99,
+        "currency": "USD"
+      },
+      "paymentMethod": "stripe",
+      "paymentDetails": {
+        "stripePaymentIntentId": "pi_3RYCX54g2lUtivUP1RxtnMZa",
+        "stripeChargeId": "ch_3RYCX54g2lUtivUP1RxtnMZa",
+        "last4": "4242",
+        "brand": "visa"
+      }
+    },
+    "paymentStatus": "succeeded",
+    "message": "Payment completed successfully"
+  }
+}
+```
+
+### Current Response (when PaymentIntent requires payment method)
+```json
+{
+  "success": false,
+  "message": "Payment not completed",
+  "paymentStatus": "requires_payment_method"
+}
+```
+
+### Alternative: Test Payment Confirmation with Stripe CLI
+# If you have Stripe CLI installed, you can simulate a successful payment:
+# 1. stripe listen --forward-to localhost:5000/api/payments/webhook
+# 2. stripe trigger payment_intent.succeeded
+
+# 2. stripe trigger payment_intent.succeeded
+
+### 11b. Test Payment Flow with Frontend Integration
+# This shows the complete payment flow that would happen through the frontend:
+# 1. Create PaymentIntent (API #10)
+# 2. Use the clientSecret with Stripe Elements on frontend
+# 3. Process payment with test card (4242 4242 4242 4242)
+# 4. Frontend calls confirm-payment API (API #11)
+#
+# Frontend test cards for Stripe:
+# - Success: 4242 4242 4242 4242
+# - Decline: 4000 0000 0000 0002
+# - Insufficient funds: 4000 0000 0000 9995
+
+### 12. Get Payment History
 GET {{baseUrl}}/payments/history
 Authorization: Bearer {{authToken}}
 ngrok-skip-browser-warning: 1
 
-### 11. Update User Profile
+### Response Body
+```json
+{
+  "success": true,
+  "data": {
+    "docs": [
+      {
+        "amount": {
+          "value": 12.99,
+          "currency": "USD"
+        },
+        "paymentDetails": {
+          "stripePaymentIntentId": "pi_3RYCX54g2lUtivUP1RxtnMZa"
+        },
+        "receipt": {
+          "emailSent": false
+        },
+        "_id": "68474758a5371160f48b78cf",
+        "user": "68474558a5371160f48b78a6",
+        "domain": {
+          "pricing": {
+            "cost": 12.99,
+            "markup": 0,
+            "sellingPrice": 12.99,
+            "currency": "USD"
+          },
+          "_id": "68474757a5371160f48b78cc",
+          "fullDomain": "example2.com",
+          "status": "pending"
+        },
+        "type": "purchase",
+        "status": "pending",
+        "paymentMethod": "stripe",
+        "createdAt": "2025-06-09T20:43:04.235Z",
+        "updatedAt": "2025-06-09T20:43:04.235Z",
+        "__v": 0
+      }
+    ],
+    "totalDocs": 1,
+    "limit": 10,
+    "totalPages": 1,
+    "page": 1,
+    "pagingCounter": 1,
+    "hasPrevPage": false,
+    "hasNextPage": false,
+    "prevPage": null,
+    "nextPage": null
+  }
+}
+
+### 13. Update User Profile
 PUT {{baseUrl}}/users/profile
 Content-Type: application/json
 Authorization: Bearer {{authToken}}
@@ -98,13 +527,47 @@ ngrok-skip-browser-warning: 1
   }
 }
 
-### 12. Password Reset Request
+### Response Body
+```json
+{
+  "success": true,
+  "data": {
+    "user": {
+      "preferences": {
+        "notifications": {
+          "email": true,
+          "sms": false
+        },
+        "currency": "USD"
+      },
+      "_id": "68474558a5371160f48b78a6",
+      "name": "Updated Name",
+      "email": "test3@example.com",
+      "role": "user",
+      "isActive": true,
+      "createdAt": "2025-06-09T20:34:32.893Z",
+      "updatedAt": "2025-06-09T20:43:39.432Z",
+      "__v": 0,
+      "stripeCustomerId": "cus_ST8gqIO42fGmyD"
+    },
+    "message": "Profile updated successfully"
+  }
+}
+
+### 14. Password Reset Request
 POST {{baseUrl}}/auth/forgot-password
 Content-Type: application/json
 ngrok-skip-browser-warning: 1
 
 {
-  "email": "test@example.com"
+  "email": "test3@example.com"
+}
+
+### Response Body
+```json
+{
+  "success": true,
+  "message": "Password reset email sent successfully"
 }
 
 ### === LOCAL TESTING (PORT 5000) ===
@@ -117,7 +580,7 @@ ngrok-skip-browser-warning: 1
 # Content-Type: application/json
 
 # {
-#   "email": "test@example.com",
+#   "email": "test3@example.com",
 #   "password": "Password123!"
 # }
 
@@ -146,7 +609,7 @@ ngrok-skip-browser-warning: 1
 # curl -X POST https://regular-innocent-pony.ngrok-free.app/api/auth/login \
 #   -H "Content-Type: application/json" \
 #   -H "ngrok-skip-browser-warning: 1" \
-#   -d '{"email":"test@example.com","password":"Password123!"}'
+#   -d '{"email":"test3@example.com","password":"Password123!"}'
 
 ### Domain search with curl
 # curl -X POST https://regular-innocent-pony.ngrok-free.app/api/domains/search \

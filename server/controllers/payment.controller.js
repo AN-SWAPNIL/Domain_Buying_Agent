@@ -18,7 +18,7 @@ export const createPaymentIntent = async (req, res, next) => {
 
     const { amount, currency = "usd", domain, metadata = {} } = req.body;
 
-    // Find or create domain record
+    // Find or create domain record for this user
     let domainRecord = await Domain.findOne({
       fullDomain: domain,
       owner: req.user.id,
@@ -30,9 +30,26 @@ export const createPaymentIntent = async (req, res, next) => {
       const domainName = domainParts[0];
       const extension = domainParts.slice(1).join(".");
 
-      // Create a new domain record if it doesn't exist
+      // Check if domain already exists with registered/pending status
+      const existingDomain = await Domain.findOne({
+        fullDomain: domain,
+        status: { $in: ["registered", "pending"] },
+      });
+
+      if (existingDomain) {
+        // Domain is already taken or being processed
+        return res.status(400).json({
+          success: false,
+          message: "This domain is no longer available for purchase",
+        });
+      }
+
+      // Create a unique domain record for this user
+      // Use combination of domain name and user ID to ensure uniqueness
+      const uniqueName = `${domainName}_${req.user.id}_${Date.now()}`;
+
       domainRecord = new Domain({
-        name: domainName,
+        name: uniqueName,
         extension: extension,
         fullDomain: domain,
         owner: req.user.id,
@@ -46,7 +63,43 @@ export const createPaymentIntent = async (req, res, next) => {
           currency: currency.toUpperCase(),
         },
       });
-      await domainRecord.save();
+
+      try {
+        await domainRecord.save();
+      } catch (error) {
+        if (error.code === 11000) {
+          // Handle duplicate key error - find existing domain for this user
+          domainRecord = await Domain.findOne({
+            fullDomain: domain,
+            owner: req.user.id,
+          });
+
+          if (!domainRecord) {
+            // If still no domain found, create one with an even more unique name
+            const fallbackName = `${domainName}_${
+              req.user.id
+            }_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+            domainRecord = new Domain({
+              name: fallbackName,
+              extension: extension,
+              fullDomain: domain,
+              owner: req.user.id,
+              status: "pending",
+              isAvailable: true,
+              registrar: "namecheap",
+              pricing: {
+                cost: amount / 100,
+                markup: 0,
+                sellingPrice: amount / 100,
+                currency: currency.toUpperCase(),
+              },
+            });
+            await domainRecord.save();
+          }
+        } else {
+          throw error;
+        }
+      }
     }
 
     // Get or create Stripe customer
@@ -122,7 +175,7 @@ export const createPaymentIntent = async (req, res, next) => {
 // Confirm payment
 export const confirmPayment = async (req, res, next) => {
   try {
-    const { paymentIntentId } = req.params;
+    const { paymentIntentId } = req.body;
 
     if (!paymentIntentId) {
       return res.status(400).json({
@@ -134,17 +187,49 @@ export const confirmPayment = async (req, res, next) => {
     // Get payment intent from Stripe
     const paymentIntent = await stripeService.confirmPayment(paymentIntentId);
 
+    // Debug: Log the payment intent structure
+    console.log("PaymentIntent status:", paymentIntent.status);
+    console.log("PaymentIntent charges:", paymentIntent.charges);
+    console.log("PaymentIntent keys:", Object.keys(paymentIntent));
+
     if (paymentIntent.status === "succeeded") {
+      // Extract charge information safely
+      let charge = null;
+      let paymentMethodDetails = null;
+
+      // Try to get charge information from the payment intent
+      if (paymentIntent.charges?.data?.length > 0) {
+        charge = paymentIntent.charges.data[0];
+        paymentMethodDetails = charge?.payment_method_details?.card;
+      } else {
+        // If charges are not expanded, get them separately
+        console.log(
+          "Charges not found in PaymentIntent, fetching separately..."
+        );
+        try {
+          const charges = await stripeService.getPaymentIntentCharges(
+            paymentIntentId
+          );
+          if (charges.length > 0) {
+            charge = charges[0];
+            paymentMethodDetails = charge?.payment_method_details?.card;
+          }
+        } catch (chargeError) {
+          console.error(
+            "Failed to fetch charges separately:",
+            chargeError.message
+          );
+        }
+      }
+
       // Find and update transaction
       const transaction = await Transaction.findOneAndUpdate(
         { "paymentDetails.stripePaymentIntentId": paymentIntentId },
         {
           status: "completed",
-          "paymentDetails.stripeChargeId": paymentIntent.charges.data[0]?.id,
-          "paymentDetails.last4":
-            paymentIntent.charges.data[0]?.payment_method_details?.card?.last4,
-          "paymentDetails.brand":
-            paymentIntent.charges.data[0]?.payment_method_details?.card?.brand,
+          "paymentDetails.stripeChargeId": charge?.id || null,
+          "paymentDetails.last4": paymentMethodDetails?.last4 || null,
+          "paymentDetails.brand": paymentMethodDetails?.brand || null,
         },
         { new: true }
       ).populate("domain");

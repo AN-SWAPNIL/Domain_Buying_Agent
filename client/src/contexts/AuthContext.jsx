@@ -95,9 +95,14 @@ export const AuthProvider = ({ children }) => {
         if (authService.isAuthenticated()) {
           try {
             const userData = await authService.getCurrentUser();
+            console.log("🔍 getCurrentUser response:", userData);
+
+            // Extract user from nested response structure
+            const user = userData.success ? userData.data.user : userData.user;
+
             dispatch({
               type: AuthActionTypes.SET_USER,
-              payload: userData.user,
+              payload: user,
             });
           } catch (apiError) {
             // If getCurrentUser fails, the token might be invalid/expired
@@ -134,9 +139,14 @@ export const AuthProvider = ({ children }) => {
     try {
       dispatch({ type: AuthActionTypes.SET_LOADING, payload: true });
       const response = await authService.login(credentials);
+      console.log("🔍 AuthContext login response:", response);
+
+      // Extract user from nested response structure
+      const userData = response.success ? response.data : response;
+
       dispatch({
         type: AuthActionTypes.LOGIN_SUCCESS,
-        payload: response,
+        payload: userData, // This contains both user and token
       });
       return response;
     } catch (error) {
@@ -154,9 +164,14 @@ export const AuthProvider = ({ children }) => {
     try {
       dispatch({ type: AuthActionTypes.SET_LOADING, payload: true });
       const response = await authService.register(userData);
+      console.log("🔍 AuthContext register response:", response);
+
+      // Extract user from nested response structure
+      const userResponse = response.success ? response.data : response;
+
       dispatch({
         type: AuthActionTypes.LOGIN_SUCCESS,
-        payload: response,
+        payload: userResponse, // This contains both user and token
       });
       return response;
     } catch (error) {

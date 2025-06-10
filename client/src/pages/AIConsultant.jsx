@@ -12,8 +12,10 @@ import {
 } from "@heroicons/react/24/outline";
 import { aiService } from "../services/aiService";
 import { domainService } from "../services/domainService";
+import { useAuth } from "../contexts/AuthContext";
 
 const AIConsultant = () => {
+  const { isAuthenticated, user } = useAuth();
   const [messages, setMessages] = useState([
     {
       id: 1,
@@ -93,11 +95,29 @@ const AIConsultant = () => {
       }
     } catch (error) {
       console.error("Chat error:", error);
+
+      let errorContent =
+        "I apologize, but I'm having trouble connecting right now. Please try again in a moment.";
+
+      if (error.message.includes("log in")) {
+        errorContent =
+          "🔐 Please log in to continue using the AI consultant. You'll be redirected to the login page shortly.";
+        // Redirect to login after showing the message
+        setTimeout(() => {
+          window.location.href = "/login";
+        }, 2000);
+      } else if (
+        error.message.includes("network") ||
+        error.message.includes("connect")
+      ) {
+        errorContent =
+          "🌐 Unable to connect to the AI service. Please check your internet connection and try again.";
+      }
+
       const errorMessage = {
         id: Date.now() + 1,
         type: "ai",
-        content:
-          "I apologize, but I'm having trouble connecting right now. Please try again in a moment.",
+        content: errorContent,
         timestamp: new Date(),
         isError: true,
       };
@@ -142,9 +162,43 @@ const AIConsultant = () => {
 
         setMessages((prev) => [...prev, aiMessage]);
       } else if (action === "purchase") {
-        const result = await domainService.purchaseDomain(domain.name);
-        if (result.success) {
-          alert(`Purchase initiated for ${domain.name}`);
+        // Prepare purchase data in the same format as DomainSearch
+        const purchaseData = {
+          domain: domain.name,
+          years: 1,
+          contactInfo: {
+            firstName: "John",
+            lastName: "Doe",
+            email: "user@example.com",
+            phone: "+1.1234567890",
+            address: "123 Main St",
+            city: "Anytown",
+            country: "US",
+          },
+        };
+
+        const result = await domainService.purchaseDomain(purchaseData);
+        if (result.success || result.domain) {
+          // Redirect to payment page
+          const domainData = result.domain || result.data?.domain;
+          const amount =
+            domainData?.pricing?.sellingPrice || domain.price || 12.99;
+          const transactionId =
+            result.transaction?.id || result.transaction?._id || "N/A";
+
+          window.location.href = `/payment?domain=${encodeURIComponent(
+            domain.name
+          )}&amount=${amount}&transaction=${transactionId}`;
+        } else {
+          const errorMessage = {
+            id: Date.now(),
+            type: "ai",
+            content:
+              "I'm sorry, but there was an issue initiating the purchase for this domain. Please try again or contact support if the problem persists.",
+            timestamp: new Date(),
+            isError: true,
+          };
+          setMessages((prev) => [...prev, errorMessage]);
         }
       }
     } catch (error) {
@@ -262,6 +316,54 @@ const AIConsultant = () => {
               </div>
             </div>
           </div>
+
+          {/* Debug Info (temporary) */}
+          {import.meta.env.VITE_DEV_MODE === "true" && (
+            <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4">
+              <div className="text-sm">
+                <p>
+                  <strong>Auth Status:</strong>{" "}
+                  {isAuthenticated
+                    ? "✅ Authenticated"
+                    : "❌ Not Authenticated"}
+                </p>
+                <p>
+                  <strong>User:</strong> {user?.email || "None"}
+                </p>
+                <p>
+                  <strong>Token:</strong>{" "}
+                  {localStorage.getItem("token") ? "✅ Present" : "❌ Missing"}
+                </p>
+                <p>
+                  <strong>API URL:</strong>{" "}
+                  {import.meta.env.VITE_NGROK_URL ||
+                    import.meta.env.VITE_API_URL}
+                </p>
+                {!isAuthenticated && (
+                  <div className="mt-2">
+                    <button
+                      onClick={() => {
+                        // For testing: Set the working token from the API tests
+                        const testToken =
+                          "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY4NDVlZWU3ZWFlYTk5MGVhMzE5NWIyMyIsImlhdCI6MTc0OTQxNDU2MiwiZXhwIjoxNzUwMDE5MzYyfQ.m2ntrXQfbf4zWD_qPvV3hvRaYtSMw8otJD0h_sSLH2A";
+                        localStorage.setItem("token", testToken);
+                        window.location.reload();
+                      }}
+                      className="px-3 py-1 bg-green-500 text-white rounded text-xs hover:bg-green-600 mr-2"
+                    >
+                      Use Test Token
+                    </button>
+                    <button
+                      onClick={() => (window.location.href = "/login")}
+                      className="px-3 py-1 bg-blue-500 text-white rounded text-xs hover:bg-blue-600"
+                    >
+                      Go to Login
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
 
           {/* Quick Suggestions */}
           {messages.length === 1 && (
@@ -393,6 +495,23 @@ const AIConsultant = () => {
             </div>
           </motion.div>
         )}
+
+        {/* Debug Info */}
+        <div className="mt-8 p-4 bg-gray-100 rounded-lg border">
+          <h4 className="text-sm font-medium text-gray-700 mb-2">
+            Debug Information
+          </h4>
+          <div className="text-xs text-gray-500">
+            <div>
+              <strong>Authenticated:</strong> {isAuthenticated ? "Yes" : "No"}
+            </div>
+            {isAuthenticated && user && (
+              <div>
+                <strong>User:</strong> {user.email}
+              </div>
+            )}
+          </div>
+        </div>
       </div>
     </div>
   );

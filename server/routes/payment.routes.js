@@ -38,7 +38,7 @@ router.post(
 // Protected routes
 router.use(protect);
 router.post("/create-intent", paymentIntentValidation, createPaymentIntent);
-router.post("/confirm-payment/:paymentIntentId", confirmPayment);
+router.post("/confirm-payment", confirmPayment);
 router.get("/history", getPaymentHistory);
 router.post("/refund/:transactionId", createRefund);
 

@@ -90,7 +90,12 @@ app.use(
     },
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization", "x-stripe-signature"],
+    allowedHeaders: [
+      "Content-Type",
+      "Authorization",
+      "x-stripe-signature",
+      "ngrok-skip-browser-warning",
+    ],
   })
 );
 
@@ -115,6 +120,17 @@ app.get("/health", (req, res) => {
   res.status(200).json({
     status: "OK",
     message: "Domain Buying Agent Server is running",
+    timestamp: new Date().toISOString(),
+  });
+});
+
+// Debug CORS endpoint
+app.get("/debug/cors", (req, res) => {
+  res.status(200).json({
+    status: "OK",
+    message: "CORS is working correctly",
+    origin: req.get("Origin"),
+    headers: req.headers,
     timestamp: new Date().toISOString(),
   });
 });

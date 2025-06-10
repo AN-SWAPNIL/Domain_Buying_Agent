@@ -4,8 +4,17 @@ export const authService = {
   // Login user
   login: async (credentials) => {
     const response = await api.post("/auth/login", credentials);
-    if (response.data.token) {
-      localStorage.setItem("token", response.data.token);
+    console.log("🔍 Login response:", response.data);
+
+    // The token is nested in response.data.data.token
+    if (response.data.success && response.data.data.token) {
+      localStorage.setItem("token", response.data.data.token);
+      console.log(
+        "✅ Token saved to localStorage:",
+        response.data.data.token.substring(0, 20) + "..."
+      );
+    } else {
+      console.error("❌ No token found in login response");
     }
     return response.data;
   },
@@ -13,8 +22,17 @@ export const authService = {
   // Register user
   register: async (userData) => {
     const response = await api.post("/auth/register", userData);
-    if (response.data.token) {
-      localStorage.setItem("token", response.data.token);
+    console.log("🔍 Register response:", response.data);
+
+    // The token is nested in response.data.data.token
+    if (response.data.success && response.data.data.token) {
+      localStorage.setItem("token", response.data.data.token);
+      console.log(
+        "✅ Token saved to localStorage:",
+        response.data.data.token.substring(0, 20) + "..."
+      );
+    } else {
+      console.error("❌ No token found in register response");
     }
     return response.data;
   },
@@ -27,6 +45,9 @@ export const authService = {
   // Get current user
   getCurrentUser: async () => {
     const response = await api.get("/auth/me");
+    console.log("🔍 Get user response:", response.data);
+
+    // The user data is nested in response.data.data.user
     return response.data;
   },
 
@@ -43,7 +64,7 @@ export const authService = {
   // Forgot password
   forgotPassword: async (email) => {
     const response = await api.post("/auth/forgot-password", { email });
-    return response.data;
+    return response.data.success ? response.data.data : response.data;
   },
 
   // Reset password
@@ -52,7 +73,7 @@ export const authService = {
       token,
       password,
     });
-    return response.data;
+    return response.data.success ? response.data.data : response.data;
   },
 
   // Update password
@@ -61,7 +82,7 @@ export const authService = {
       currentPassword,
       newPassword,
     });
-    return response.data;
+    return response.data.success ? response.data.data : response.data;
   },
 };
 

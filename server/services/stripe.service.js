@@ -71,13 +71,36 @@ class StripeService {
 
   async confirmPayment(paymentIntentId) {
     try {
+      console.log("Retrieving PaymentIntent with ID:", paymentIntentId);
       const paymentIntent = await this.stripe.paymentIntents.retrieve(
-        paymentIntentId
+        paymentIntentId,
+        {
+          expand: ["charges.data.payment_method_details"],
+        }
+      );
+      console.log("Retrieved PaymentIntent. Status:", paymentIntent.status);
+      console.log("Charges present:", !!paymentIntent.charges);
+      console.log(
+        "Charges data length:",
+        paymentIntent.charges?.data?.length || 0
       );
       return paymentIntent;
     } catch (error) {
       console.error("Stripe Confirm Payment Error:", error.message);
       throw new Error("Failed to confirm payment");
+    }
+  }
+
+  async getPaymentIntentCharges(paymentIntentId) {
+    try {
+      const charges = await this.stripe.charges.list({
+        payment_intent: paymentIntentId,
+        expand: ["data.payment_method_details"],
+      });
+      return charges.data;
+    } catch (error) {
+      console.error("Stripe Get Charges Error:", error.message);
+      throw new Error("Failed to get charges");
     }
   }
 

@@ -36,9 +36,20 @@ const MyDomains = () => {
   const fetchDomains = async () => {
     try {
       const response = await domainService.getUserDomains();
-      setDomains(response.domains || []);
+      console.log("Domains response:", response); // Debug log
+      // Handle paginated response structure
+      if (response.docs) {
+        setDomains(response.docs);
+      } else if (response.domains) {
+        setDomains(response.domains);
+      } else if (Array.isArray(response)) {
+        setDomains(response);
+      } else {
+        setDomains([]);
+      }
     } catch (error) {
       console.error("Error fetching domains:", error);
+      setDomains([]);
     } finally {
       setLoading(false);
     }

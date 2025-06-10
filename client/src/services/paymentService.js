@@ -14,7 +14,7 @@ export const paymentService = {
       currency,
       metadata,
     });
-    return response.data;
+    return response.data.success ? response.data.data : response.data;
   },
 
   // Confirm payment
@@ -22,13 +22,13 @@ export const paymentService = {
     const response = await api.post("/payments/confirm-payment", {
       paymentIntentId,
     });
-    return response.data;
+    return response.data.success ? response.data.data : response.data;
   },
 
   // Get payment methods
   getPaymentMethods: async () => {
     const response = await api.get("/payments/payment-methods");
-    return response.data;
+    return response.data.success ? response.data.data : response.data;
   },
 
   // Add payment method
@@ -36,7 +36,7 @@ export const paymentService = {
     const response = await api.post("/payments/payment-methods", {
       paymentMethodId,
     });
-    return response.data;
+    return response.data.success ? response.data.data : response.data;
   },
 
   // Remove payment method
@@ -44,7 +44,7 @@ export const paymentService = {
     const response = await api.delete(
       `/payments/payment-methods/${paymentMethodId}`
     );
-    return response.data;
+    return response.data.success ? response.data.data : response.data;
   },
 
   // Set default payment method
@@ -52,7 +52,7 @@ export const paymentService = {
     const response = await api.put("/payments/default-payment-method", {
       paymentMethodId,
     });
-    return response.data;
+    return response.data.success ? response.data.data : response.data;
   },
 
   // Get payment history
@@ -60,7 +60,7 @@ export const paymentService = {
     const response = await api.get("/payments/history", {
       params: { page, limit },
     });
-    return response.data;
+    return response.data.success ? response.data.data : response.data;
   },
 
   // Get transaction history
@@ -68,13 +68,13 @@ export const paymentService = {
     const response = await api.get("/payments/transactions", {
       params: { page, limit },
     });
-    return response.data;
+    return response.data.success ? response.data.data : response.data;
   },
 
   // Get transaction details
   getTransactionDetails: async (transactionId) => {
     const response = await api.get(`/payments/transactions/${transactionId}`);
-    return response.data;
+    return response.data.success ? response.data.data : response.data;
   },
 
   // Request refund
@@ -85,19 +85,19 @@ export const paymentService = {
         reason,
       }
     );
-    return response.data;
+    return response.data.success ? response.data.data : response.data;
   },
 
   // Get billing information
   getBillingInfo: async () => {
     const response = await api.get("/payments/billing-info");
-    return response.data;
+    return response.data.success ? response.data.data : response.data;
   },
 
   // Update billing information
   updateBillingInfo: async (billingInfo) => {
     const response = await api.put("/payments/billing-info", billingInfo);
-    return response.data;
+    return response.data.success ? response.data.data : response.data;
   },
 
   // Get invoices
@@ -105,7 +105,7 @@ export const paymentService = {
     const response = await api.get("/payments/invoices", {
       params: { page, limit },
     });
-    return response.data;
+    return response.data.success ? response.data.data : response.data;
   },
 
   // Download invoice
@@ -113,7 +113,7 @@ export const paymentService = {
     const response = await api.get(`/payments/invoices/${invoiceId}/download`, {
       responseType: "blob",
     });
-    return response.data;
+    return response.data.success ? response.data.data : response.data;
   },
 };
 

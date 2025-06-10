@@ -9,7 +9,7 @@ export const domainService = {
         params.extensions = extensions;
       }
       const response = await api.get("/domains/search", { params });
-      return response.data;
+      return response.data.success ? response.data.data : response.data;
     } catch (error) {
       console.warn("API not available, returning mock data");
       // Mock data for demonstration
@@ -32,7 +32,7 @@ export const domainService = {
   checkAvailability: async (domain) => {
     try {
       const response = await api.get(`/domains/check/${domain}`);
-      return response.data;
+      return response.data.success ? response.data.data : response.data;
     } catch (error) {
       console.warn("API not available, returning mock data");
       return {
@@ -48,7 +48,7 @@ export const domainService = {
   getDomainDetails: async (domain) => {
     try {
       const response = await api.get(`/domains/details/${domain}`);
-      return response.data;
+      return response.data.success ? response.data.data : response.data;
     } catch (error) {
       console.warn("API not available, returning mock data");
       return {
@@ -71,7 +71,7 @@ export const domainService = {
       const response = await api.get("/domains/suggestions", {
         params: { keyword },
       });
-      return response.data;
+      return response.data.success ? response.data.data : response.data;
     } catch (error) {
       console.warn("API not available, returning mock data");
       const suggestions = [];
@@ -125,7 +125,7 @@ export const domainService = {
   purchaseDomain: async (domainData) => {
     try {
       const response = await api.post("/domains/purchase", domainData);
-      return response.data;
+      return response.data.success ? response.data.data : response.data;
     } catch (error) {
       console.warn("API not available, returning mock data");
       return {
@@ -144,7 +144,7 @@ export const domainService = {
       const response = await api.get("/domains/my-domains", {
         params: { page, limit },
       });
-      return response.data;
+      return response.data.success ? response.data.data : response.data;
     } catch (error) {
       console.warn("API not available, returning mock data");
       // Mock user domains
@@ -189,7 +189,7 @@ export const domainService = {
   getDomainById: async (domainId) => {
     try {
       const response = await api.get(`/domains/${domainId}`);
-      return response.data;
+      return response.data.success ? response.data.data : response.data;
     } catch (error) {
       console.warn("API not available, returning mock data");
       return {
@@ -217,7 +217,7 @@ export const domainService = {
       const response = await api.put(`/domains/${domainId}/dns`, {
         dnsRecords,
       });
-      return response.data;
+      return response.data.success ? response.data.data : response.data;
     } catch (error) {
       console.warn("API not available, returning mock data");
       return {
@@ -232,7 +232,7 @@ export const domainService = {
   getDNSRecords: async (domainId) => {
     try {
       const response = await api.get(`/domains/${domainId}/dns`);
-      return response.data;
+      return response.data.success ? response.data.data : response.data;
     } catch (error) {
       console.warn("API not available, returning mock data");
       return [
@@ -257,7 +257,7 @@ export const domainService = {
         domain,
         authCode,
       });
-      return response.data;
+      return response.data.success ? response.data.data : response.data;
     } catch (error) {
       console.warn("API not available, returning mock data");
       return {
@@ -274,7 +274,7 @@ export const domainService = {
   renewDomain: async (domainId, years = 1) => {
     try {
       const response = await api.post(`/domains/${domainId}/renew`, { years });
-      return response.data;
+      return response.data.success ? response.data.data : response.data;
     } catch (error) {
       console.warn("API not available, returning mock data");
       return {
@@ -292,7 +292,7 @@ export const domainService = {
   getDomainPricing: async (tld) => {
     try {
       const response = await api.get(`/domains/pricing/${tld}`);
-      return response.data;
+      return response.data.success ? response.data.data : response.data;
     } catch (error) {
       console.warn("API not available, returning mock data");
       const basePrices = {
@@ -322,7 +322,7 @@ export const domainService = {
   bulkSearch: async (domains) => {
     try {
       const response = await api.post("/domains/bulk-search", { domains });
-      return response.data;
+      return response.data.success ? response.data.data : response.data;
     } catch (error) {
       console.warn("API not available, returning mock data");
       return domains.map((domain) => ({

@@ -15,6 +15,7 @@ const api = axios.create({
   timeout: API_TIMEOUT,
   headers: {
     "Content-Type": "application/json",
+    "ngrok-skip-browser-warning": "1",
   },
 });
 
@@ -24,10 +25,14 @@ api.interceptors.request.use(
     const token = localStorage.getItem("token");
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
+      console.log("🔑 Adding auth token to request:", config.url);
+    } else {
+      console.log("⚠️ No auth token found for request:", config.url);
     }
     return config;
   },
   (error) => {
+    console.error("❌ Request interceptor error:", error);
     return Promise.reject(error);
   }
 );
@@ -35,9 +40,17 @@ api.interceptors.request.use(
 // Response interceptor for error handling
 api.interceptors.response.use(
   (response) => {
+    console.log("✅ API Response:", response.config.url, response.status);
     return response;
   },
   (error) => {
+    console.error("❌ API Error:", {
+      url: error.config?.url,
+      status: error.response?.status,
+      message: error.response?.data?.message || error.message,
+      data: error.response?.data,
+    });
+
     if (error.response?.status === 401) {
       // Only redirect to login if we're not already on the login page
       // and if we actually had a token (meaning the user was logged in)
@@ -50,6 +63,7 @@ api.interceptors.response.use(
         currentPath === "/login" || currentPath === "/register";
 
       if (hadToken && !isAuthPage) {
+        console.log("🔄 Redirecting to login due to 401 error");
         // Dispatch a custom event instead of direct redirect
         // This allows components to handle the auth failure more gracefully
         window.dispatchEvent(

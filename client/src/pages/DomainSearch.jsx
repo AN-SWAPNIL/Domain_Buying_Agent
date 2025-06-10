@@ -27,7 +27,42 @@ const DomainSearch = () => {
     setLoading(true);
     try {
       const results = await domainService.searchDomains(searchTerm);
-      setSearchResults(results);
+      console.log("🔍 Domain search results:", results);
+
+      // The API returns {directMatches: [], aiSuggestions: []}
+      // Combine both arrays for display
+      const allDomains = [];
+
+      if (results.directMatches) {
+        // Convert directMatches to the expected format
+        const directDomains = results.directMatches.map((match) => ({
+          name: match.domain.includes(".")
+            ? match.domain
+            : `${match.domain}.com`,
+          available: match.available,
+          price: match.price || 12.99,
+          premium: false,
+          registrar: "Namecheap",
+          description: `Direct match for ${searchTerm}`,
+        }));
+        allDomains.push(...directDomains);
+      }
+
+      if (results.aiSuggestions) {
+        // Convert aiSuggestions to the expected format
+        const aiDomains = results.aiSuggestions.map((suggestion) => ({
+          name: suggestion.domain,
+          available: true, // AI suggestions are typically available
+          price: 12.99,
+          premium: suggestion.brandabilityScore > 8,
+          registrar: "Namecheap",
+          description: suggestion.reasoning,
+        }));
+        allDomains.push(...aiDomains);
+      }
+
+      setSearchResults(allDomains);
+      console.log("✅ Processed search results:", allDomains);
     } catch (error) {
       console.error("Search error:", error);
     } finally {
@@ -40,10 +75,29 @@ const DomainSearch = () => {
 
     setLoadingAI(true);
     try {
-      const suggestions = await aiService.getDomainSuggestions(
+      const response = await aiService.getDomainSuggestions(
         businessDescription
       );
-      setAiSuggestions(suggestions);
+      console.log("🔍 AI suggestions response:", response);
+
+      // The API returns {suggestions: [...]}
+      const suggestions = response.suggestions || [];
+
+      // Convert suggestions to the expected format
+      const formattedSuggestions = suggestions.map((suggestion, index) => ({
+        name: suggestion.domain || suggestion.name || `suggestion-${index}.com`,
+        available: true, // AI suggestions are typically available
+        price: suggestion.price || 12.99,
+        premium: suggestion.brandabilityScore > 8,
+        registrar: "Namecheap",
+        description:
+          suggestion.reasoning ||
+          suggestion.description ||
+          "AI generated domain suggestion",
+      }));
+
+      setAiSuggestions(formattedSuggestions);
+      console.log("✅ Processed AI suggestions:", formattedSuggestions);
     } catch (error) {
       console.error("AI suggestions error:", error);
     } finally {
@@ -61,16 +115,67 @@ const DomainSearch = () => {
     setSelectedDomains(newSelected);
   };
 
-  const handlePurchase = async (domain) => {
+  const [purchasedDomains, setPurchasedDomains] = useState(new Set());
+
+  const handlePurchase = async (domainName) => {
+    // Prevent multiple purchases of the same domain
+    if (purchasedDomains.has(domainName)) {
+      alert(`${domainName} has already been added to your cart!`);
+      return;
+    }
+
     try {
-      const result = await domainService.purchaseDomain(domain);
-      if (result.success) {
-        // Handle successful purchase
-        alert(`Purchase initiated for ${domain}`);
+      console.log("🛒 Attempting to purchase domain:", domainName);
+
+      // Prepare the request data as expected by the backend
+      const purchaseData = {
+        domain: domainName,
+        years: 1, // Default to 1 year
+        contactInfo: {
+          firstName: "John",
+          lastName: "Doe",
+          email: "user@example.com",
+          phone: "+1.1234567890",
+          address: "123 Main St",
+          city: "Anytown",
+          country: "US",
+        },
+      };
+
+      const result = await domainService.purchaseDomain(purchaseData);
+      console.log("✅ Purchase result:", result);
+
+      if (result.success || result.domain) {
+        // Add to purchased domains set to prevent re-purchasing
+        setPurchasedDomains((prev) => new Set([...prev, domainName]));
+
+        // Handle successful purchase initiation
+        const transactionId =
+          result.transaction?.id || result.transaction?._id || "N/A";
+
+        // Redirect to payment page with domain and amount
+        const domain = result.domain || result.data?.domain;
+        const amount = domain?.pricing?.sellingPrice || 12.99;
+
+        // Navigate to payment page with URL parameters
+        window.location.href = `/payment?domain=${encodeURIComponent(
+          domainName
+        )}&amount=${amount}&transaction=${transactionId}`;
+      } else {
+        alert("Purchase failed. Please try again.");
       }
     } catch (error) {
       console.error("Purchase error:", error);
-      alert("Purchase failed. Please try again.");
+
+      // Handle specific error messages
+      let errorMessage = "Purchase failed. Please try again.";
+      if (error.message?.includes("not available")) {
+        errorMessage = `❌ ${domainName} is no longer available for registration.\n\nIt may have been purchased by another user or already exists in our system.`;
+      } else if (error.message?.includes("auth")) {
+        errorMessage = "Please log in to purchase domains.";
+      }
+
+      alert(errorMessage);
     }
   };
 

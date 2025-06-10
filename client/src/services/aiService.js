@@ -5,10 +5,15 @@ export const aiService = {
   getDomainSuggestions: async (businessDescription, preferences = {}) => {
     try {
       const response = await api.post("/ai/suggest-domains", {
-        businessDescription,
-        preferences,
+        business: businessDescription,
+        industry: preferences.industry || "technology",
+        keywords: preferences.keywords || [],
+        budget: preferences.budget || 1000,
+        extensions: preferences.extensions || [".com", ".net", ".org"],
+        audience: preferences.audience || "general",
+        context: preferences.context || businessDescription,
       });
-      return response.data;
+      return response.data.success ? response.data.data : response.data;
     } catch (error) {
       console.error("AI service error:", error);
       throw new Error(
@@ -21,7 +26,7 @@ export const aiService = {
   analyzeDomain: async (domain) => {
     try {
       const response = await api.post("/ai/analyze-domain", { domain });
-      return response.data;
+      return response.data.success ? response.data.data : response.data;
     } catch (error) {
       console.error("AI service error:", error);
       throw new Error(
@@ -33,13 +38,39 @@ export const aiService = {
   // Chat with AI consultant
   chatWithAI: async (message, conversationId = null) => {
     try {
+      console.log("🚀 Attempting AI chat with message:", message);
+      console.log(
+        "🔑 Token in localStorage:",
+        localStorage.getItem("token") ? "Present" : "Missing"
+      );
+
       const response = await api.post("/ai/chat", {
         message,
         conversationId,
       });
-      return response.data;
+
+      console.log("✅ AI chat raw response:", response.data);
+
+      // Extract data from nested response structure
+      const data = response.data.success ? response.data.data : response.data;
+      console.log("✅ AI chat extracted data:", data);
+
+      return data;
     } catch (error) {
       console.error("AI chat error:", error);
+
+      // Enhanced error logging
+      console.error("❌ Error details:", {
+        status: error.response?.status,
+        statusText: error.response?.statusText,
+        message: error.response?.data?.message,
+        data: error.response?.data,
+        config: {
+          url: error.config?.url,
+          method: error.config?.method,
+          headers: error.config?.headers,
+        },
+      });
 
       // Check if it's an authentication error
       if (error.response?.status === 401) {
@@ -64,7 +95,7 @@ export const aiService = {
   getConversationHistory: async (conversationId) => {
     try {
       const response = await api.get(`/ai/conversations/${conversationId}`);
-      return response.data;
+      return response.data.success ? response.data.data : response.data;
     } catch (error) {
       console.error("Failed to get conversation history:", error);
       throw new Error(
@@ -79,7 +110,7 @@ export const aiService = {
       const response = await api.get("/ai/conversations", {
         params: { page, limit },
       });
-      return response.data;
+      return response.data.success ? response.data.data : response.data;
     } catch (error) {
       console.error("Failed to get user conversations:", error);
       throw new Error(
@@ -92,7 +123,7 @@ export const aiService = {
   deleteConversation: async (conversationId) => {
     try {
       const response = await api.delete(`/ai/conversations/${conversationId}`);
-      return response.data;
+      return response.data.success ? response.data.data : response.data;
     } catch (error) {
       console.error("Failed to delete conversation:", error);
       throw new Error(
@@ -109,7 +140,7 @@ export const aiService = {
         industry,
         targetAudience,
       });
-      return response.data;
+      return response.data.success ? response.data.data : response.data;
     } catch (error) {
       console.error("Failed to get domain ideas:", error);
       throw new Error(
@@ -122,7 +153,7 @@ export const aiService = {
   checkBrandability: async (domain) => {
     try {
       const response = await api.post("/ai/brandability", { domain });
-      return response.data;
+      return response.data.success ? response.data.data : response.data;
     } catch (error) {
       console.error("Failed to check brandability:", error);
       throw new Error(
@@ -135,7 +166,7 @@ export const aiService = {
   getSEOAnalysis: async (domain) => {
     try {
       const response = await api.post("/ai/seo-analysis", { domain });
-      return response.data;
+      return response.data.success ? response.data.data : response.data;
     } catch (error) {
       console.error("Failed to get SEO analysis:", error);
       throw new Error(error.response?.data?.message || "Failed to analyze SEO");
@@ -149,7 +180,7 @@ export const aiService = {
         description,
         industry,
       });
-      return response.data;
+      return response.data.success ? response.data.data : response.data;
     } catch (error) {
       console.error("Failed to generate business names:", error);
       throw new Error(

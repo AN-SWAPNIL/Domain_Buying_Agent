@@ -23,6 +23,7 @@ import DomainSearch from "./pages/DomainSearch";
 import AIConsultant from "./pages/AIConsultant";
 import MyDomains from "./pages/MyDomains";
 import Profile from "./pages/Profile";
+import Payment from "./pages/Payment";
 import NotFound from "./pages/NotFound";
 
 // Load Stripe
@@ -90,6 +91,14 @@ function App() {
                     element={
                       <ProtectedRoute>
                         <Profile />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/payment"
+                    element={
+                      <ProtectedRoute>
+                        <Payment />
                       </ProtectedRoute>
                     }
                   />
