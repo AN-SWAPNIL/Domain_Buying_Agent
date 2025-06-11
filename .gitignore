@@ -18,9 +18,9 @@ lerna-debug.log*
 # ===================================
 # ENVIRONMENT VARIABLES & SECRETS
 # ===================================
-.env*
 server/.env
 client/.env
+.env*
 !.env.example
 !server/.env.example
 !client/.env.example
