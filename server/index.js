@@ -57,46 +57,47 @@ const allowedOrigins = [
 ];
 
 app.use(
-  cors({
-    origin: function (origin, callback) {
-      console.log("🔍 CORS check for origin:", origin);
+  // cors({
+  //   origin: function (origin, callback) {
+  //     console.log("🔍 CORS check for origin:", origin);
 
-      // Allow requests with no origin (like mobile apps or curl requests)
-      if (!origin) {
-        console.log("✅ No origin - allowing request");
-        return callback(null, true);
-      }
+  //     // Allow requests with no origin (like mobile apps or curl requests)
+  //     if (!origin) {
+  //       console.log("✅ No origin - allowing request");
+  //       return callback(null, true);
+  //     }
 
-      // Check if the origin is in the allowed list or matches ngrok pattern
-      const isAllowed = allowedOrigins.some((allowed) => {
-        if (!allowed) return false;
-        return (
-          allowed === origin ||
-          (allowed.includes("*") && origin.includes("ngrok")) ||
-          origin.includes("regular-innocent-pony.ngrok-free.app")
-        );
-      });
+  //     // Check if the origin is in the allowed list or matches ngrok pattern
+  //     const isAllowed = allowedOrigins.some((allowed) => {
+  //       if (!allowed) return false;
+  //       return (
+  //         allowed === origin ||
+  //         (allowed.includes("*") && origin.includes("ngrok")) ||
+  //         origin.includes("regular-innocent-pony.ngrok-free.app")
+  //       );
+  //     });
 
-      if (isAllowed) {
-        console.log("✅ Origin allowed:", origin);
-        return callback(null, true);
-      }
+  //     if (isAllowed) {
+  //       console.log("✅ Origin allowed:", origin);
+  //       return callback(null, true);
+  //     }
 
-      console.log("❌ Origin rejected:", origin);
-      console.log("📋 Allowed origins:", allowedOrigins);
-      const msg =
-        "The CORS policy for this site does not allow access from the specified Origin.";
-      return callback(new Error(msg), false);
-    },
-    credentials: true,
-    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    allowedHeaders: [
-      "Content-Type",
-      "Authorization",
-      "x-stripe-signature",
-      "ngrok-skip-browser-warning",
-    ],
-  })
+  //     console.log("❌ Origin rejected:", origin);
+  //     console.log("📋 Allowed origins:", allowedOrigins);
+  //     const msg =
+  //       "The CORS policy for this site does not allow access from the specified Origin.";
+  //     return callback(new Error(msg), false);
+  //   },
+  //   credentials: true,
+  //   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  //   allowedHeaders: [
+  //     "Content-Type",
+  //     "Authorization",
+  //     "x-stripe-signature",
+  //     "ngrok-skip-browser-warning",
+  //   ],
+  // })
+  cors(true) // Temporarily disable CORS for debugging
 );
 
 // Stripe webhook endpoint (must be before express.json())

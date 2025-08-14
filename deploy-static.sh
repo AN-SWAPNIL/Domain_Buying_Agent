@@ -38,7 +38,7 @@ echo -e "${GREEN}✅ Backend server started${NC}"
 
 # Start ngrok with static domain
 echo -e "${YELLOW}🌐 Starting ngrok with static domain...${NC}"
-ngrok http --url=$STATIC_DOMAIN 5000 > logs/ngrok.log 2>&1 &
+./ngrok.exe http --url=$STATIC_DOMAIN 5000 > logs/ngrok.log 2>&1 &
 NGROK_PID=$!
 
 # Wait for ngrok
